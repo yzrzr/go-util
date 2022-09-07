@@ -25,8 +25,6 @@ import (
 	"strings"
 )
 
-var _ List[int] = (*linkedList[int])(nil)
-
 func NewLinkedList[E comparable]() List[E] {
 	return &linkedList[E]{
 		list: list.New(),

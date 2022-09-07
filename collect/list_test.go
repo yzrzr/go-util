@@ -25,8 +25,10 @@ import (
 )
 
 func newArrayList[E comparable](list ...E) List[E] {
-	arr := NewArrayList[E](len(list))
-	//arr := NewLinkedList[E]()
+	c := DefaultListConfig
+	c.DataStruct = DataStructLinked
+	c.Safe = true
+	arr := NewList[E](c)
 	for _, v := range list {
 		arr.Add(v)
 	}
@@ -536,12 +538,8 @@ func Test_arrayList_Sort(t *testing.T) {
 		arg  SortLess[int]
 		want List[int]
 	}{
-		{"Sort-1", func(e1, e2 int) bool {
-			return e1 < e2
-		}, newArrayList[int](3, 5, 9)},
-		{"Sort-2", func(e1, e2 int) bool {
-			return e1 > e2
-		}, newArrayList[int](9, 5, 3)},
+		{"Sort-1", SortLessOrdered[int](true), newArrayList[int](3, 5, 9)},
+		{"Sort-2", SortLessOrdered[int](false), newArrayList[int](9, 5, 3)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

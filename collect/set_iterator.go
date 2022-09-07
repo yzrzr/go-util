@@ -18,6 +18,8 @@
 
 package collect
 
+import "math"
+
 func NewSetIterator[E comparable](set Set[E]) Iterator[E] {
 	return &setIterator[E]{
 		lastRet: -1,
@@ -29,8 +31,9 @@ func NewSetIterator[E comparable](set Set[E]) Iterator[E] {
 type setIterator[E comparable] struct {
 	cursor, lastRet, size int
 
-	set    Set[E]
-	values []E
+	isClose bool
+	set     Set[E]
+	values  []E
 }
 
 func (s *setIterator[E]) HasNext() bool {
@@ -38,6 +41,10 @@ func (s *setIterator[E]) HasNext() bool {
 }
 
 func (s *setIterator[E]) Next() (e E, err error) {
+	if s.isClose {
+		err = ErrIteratorClose
+		return
+	}
 	i := s.cursor
 	if i > s.size {
 		err = ErrNoSuchElement
@@ -49,6 +56,9 @@ func (s *setIterator[E]) Next() (e E, err error) {
 }
 
 func (s *setIterator[E]) Remove() error {
+	if s.isClose {
+		return ErrIteratorClose
+	}
 	if s.lastRet < 0 {
 		return ErrIllegalState
 	}
@@ -58,6 +68,9 @@ func (s *setIterator[E]) Remove() error {
 }
 
 func (s *setIterator[E]) ForEachRemaining(action Consumer[E]) error {
+	if s.isClose {
+		return ErrIteratorClose
+	}
 	var err error
 	for i := s.cursor; i < s.size; i++ {
 		err = action(s.values[i])
@@ -66,4 +79,9 @@ func (s *setIterator[E]) ForEachRemaining(action Consumer[E]) error {
 		}
 	}
 	return nil
+}
+
+func (s *setIterator[E]) Close() {
+	s.isClose = true
+	s.cursor = math.MaxInt
 }

@@ -30,4 +30,7 @@ type Iterator[E any] interface {
 
 	// ForEachRemaining 对每个剩余元素执行给定的操作，直到所有元素都被处理或返回错误
 	ForEachRemaining(action Consumer[E]) error
+
+	// Close 关闭迭代器
+	Close()
 }

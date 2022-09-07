@@ -22,3 +22,17 @@ package collect
 type Set[E comparable] interface {
 	Collection[E]
 }
+
+func NewSet[E comparable]() Set[E] {
+	return &hashSet[E]{
+		data: make(map[E]struct{}),
+	}
+}
+
+func SetOf[E comparable](list ...E) Set[E] {
+	set := NewSet[E]()
+	for _, v := range list {
+		set.Add(v)
+	}
+	return set
+}

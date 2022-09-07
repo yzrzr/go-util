@@ -23,24 +23,6 @@ import (
 	"strings"
 )
 
-var _ Set[int] = (*hashSet[int])(nil)
-
-func NewHashSet[E comparable]() Set[E] {
-	return &hashSet[E]{
-		data: make(map[E]struct{}),
-	}
-}
-
-func NewHashSetOf[E comparable](list ...E) Set[E] {
-	set := &hashSet[E]{
-		data: make(map[E]struct{}),
-	}
-	for _, v := range list {
-		set.Add(v)
-	}
-	return set
-}
-
 type hashSet[E comparable] struct {
 	data map[E]struct{}
 }

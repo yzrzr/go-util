@@ -66,3 +66,43 @@ type List[E comparable] interface {
 	// 返回移除的元素个数
 	RemoveIfN(filter Predicate[E], n int) int
 }
+
+// List 底层实现结构选择
+const (
+	_ = iota
+	DataStructSlice
+	DataStructLinked
+)
+
+type ListConfig struct {
+	// InitialCapacity 初始容量，底层结构为DataStructSlice时有效，默认16
+	InitialCapacity int
+	// Safe 是否需要并发安全，需要在多个goroutine中并发操作时需要设置为true，默认false
+	Safe bool
+	// DataStruct 底层实现结构，默认为切片实现
+	DataStruct int
+}
+
+// DefaultListConfig 默认配置
+var DefaultListConfig = ListConfig{
+	InitialCapacity: 16,
+	Safe:            false,
+	DataStruct:      DataStructSlice,
+}
+
+// NewList 根据配置创建一个 List
+func NewList[E comparable](config ListConfig) List[E] {
+	if config.InitialCapacity < 1 {
+		config.InitialCapacity = 16
+	}
+	var list List[E]
+	if config.DataStruct == DataStructLinked {
+		list = NewLinkedList[E]()
+	} else {
+		list = NewArrayList[E](config.InitialCapacity)
+	}
+	if config.Safe {
+		list = NewSafeList[E](list)
+	}
+	return list
+}

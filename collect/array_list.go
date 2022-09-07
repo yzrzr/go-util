@@ -27,8 +27,6 @@ import (
 	"unsafe"
 )
 
-var _ List[int] = (*arrayList[int])(nil)
-
 // NewArrayList Abstract Factory
 func NewArrayList[E comparable](initialCapacity int) List[E] {
 	return &arrayList[E]{
@@ -211,7 +209,7 @@ func (a *arrayList[E]) ReplaceAll(operator UnaryOperator[E]) {
 
 func (a *arrayList[E]) Sort(less SortLess[E]) {
 	s := sortList[E]{
-		data: a.elementData,
+		data: a.elementData[:a.size],
 		less: less,
 	}
 	sort.Sort(s)

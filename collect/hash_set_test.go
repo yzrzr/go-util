@@ -16,25 +16,25 @@ func getWantSet[E comparable](args ...E) Set[E] {
 	}
 }
 
-func TestNewHashSetOf(t *testing.T) {
+func TestSetOf(t *testing.T) {
 	tests := []struct {
 		name string
 		args []int
 		want Set[int]
 	}{
-		{"NewHashSetOf-1", []int{2, 2, 3, 4, 5, 4, 6}, getWantSet[int](2, 3, 4, 5, 6)},
+		{"SetOf-1", []int{2, 2, 3, 4, 5, 4, 6}, getWantSet[int](2, 3, 4, 5, 6)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHashSetOf(tt.args...); !got.Equals(tt.want) {
-				t.Errorf("NewHashSetOf() = %v, want %v", got, tt.want)
+			if got := SetOf(tt.args...); !got.Equals(tt.want) {
+				t.Errorf("SetOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_hashSet_Add(t *testing.T) {
-	set := NewHashSet[int]()
+	set := NewSet[int]()
 	tests := []struct {
 		name    string
 		arg     int
@@ -59,16 +59,16 @@ func Test_hashSet_Add(t *testing.T) {
 }
 
 func Test_hashSet_AddAll(t *testing.T) {
-	set := NewHashSet[int]()
+	set := NewSet[int]()
 	tests := []struct {
 		name    string
 		arg     Collection[int]
 		wantErr bool
 		wantSet Set[int]
 	}{
-		{"AddAll-1", NewHashSetOf(1, 2), false, getWantSet[int](1, 2)},
-		{"AddAll-2", NewHashSetOf(1, 2), false, getWantSet[int](1, 2)},
-		{"AddAll-3", NewHashSetOf(1, 2, 3, 4), false, getWantSet[int](1, 2, 3, 4)},
+		{"AddAll-1", SetOf(1, 2), false, getWantSet[int](1, 2)},
+		{"AddAll-2", SetOf(1, 2), false, getWantSet[int](1, 2)},
+		{"AddAll-3", SetOf(1, 2, 3, 4), false, getWantSet[int](1, 2, 3, 4)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -81,7 +81,7 @@ func Test_hashSet_AddAll(t *testing.T) {
 }
 
 func Test_hashSet_Clear(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4)
+	set := SetOf[int](1, 2, 3, 4)
 	set.Clear()
 	if !set.IsEmpty() {
 		t.Errorf("Clear() isEmpty = false, wantErr true")
@@ -89,7 +89,7 @@ func Test_hashSet_Clear(t *testing.T) {
 }
 
 func Test_hashSet_Contains(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4)
+	set := SetOf[int](1, 2, 3, 4)
 	tests := []struct {
 		name string
 		arg  int
@@ -108,14 +108,14 @@ func Test_hashSet_Contains(t *testing.T) {
 }
 
 func Test_hashSet_ContainsAll(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4)
+	set := SetOf[int](1, 2, 3, 4)
 	tests := []struct {
 		name string
 		arg  Collection[int]
 		want bool
 	}{
-		{"ContainsAll-1", NewHashSetOf[int](1, 2, 3, 4), true},
-		{"ContainsAll-2", NewHashSetOf[int](1, 2, 3, 4, 5), false},
+		{"ContainsAll-1", SetOf[int](1, 2, 3, 4), true},
+		{"ContainsAll-2", SetOf[int](1, 2, 3, 4, 5), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -133,9 +133,9 @@ func Test_hashSet_Equals(t *testing.T) {
 		arg  Set[int]
 		want bool
 	}{
-		{"Equals-1", NewHashSetOf[int](1, 2, 3, 4), NewHashSetOf[int](1, 2, 3, 4), true},
-		{"Equals-2", NewHashSetOf[int](1, 2, 3, 4), NewHashSetOf[int](1, 2, 3), false},
-		{"Equals-3", NewHashSetOf[int](), NewHashSetOf[int](), true},
+		{"Equals-1", SetOf[int](1, 2, 3, 4), SetOf[int](1, 2, 3, 4), true},
+		{"Equals-2", SetOf[int](1, 2, 3, 4), SetOf[int](1, 2, 3), false},
+		{"Equals-3", SetOf[int](), SetOf[int](), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -155,7 +155,7 @@ func Test_hashSet_ForEach(t *testing.T) {
 		wantErr   bool
 		wantTotal int
 	}{
-		{"ForEach-1", NewHashSetOf[int](1, 2, 3, 4, 4), func(e int) error { total += e; return nil }, false, 10},
+		{"ForEach-1", SetOf[int](1, 2, 3, 4, 4), func(e int) error { total += e; return nil }, false, 10},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -175,8 +175,8 @@ func Test_hashSet_IsEmpty(t *testing.T) {
 		set  Set[int]
 		want bool
 	}{
-		{"IsEmpty-1", NewHashSetOf[int](1, 2, 3, 4), false},
-		{"IsEmpty-2", NewHashSetOf[int](), true},
+		{"IsEmpty-1", SetOf[int](1, 2, 3, 4), false},
+		{"IsEmpty-2", SetOf[int](), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -188,16 +188,16 @@ func Test_hashSet_IsEmpty(t *testing.T) {
 }
 
 func Test_hashSet_Remove(t *testing.T) {
-	set := NewHashSetOf[int](10, 20, 30, 40)
+	set := SetOf[int](10, 20, 30, 40)
 	tests := []struct {
 		name    string
 		arg     int
 		want    bool
 		wantSet Set[int]
 	}{
-		{"Remove-1", 20, true, NewHashSetOf[int](10, 30, 40)},
-		{"Remove-2", 20, false, NewHashSetOf[int](10, 30, 40)},
-		{"Remove-3", 10, true, NewHashSetOf[int](30, 40)},
+		{"Remove-1", 20, true, SetOf[int](10, 30, 40)},
+		{"Remove-2", 20, false, SetOf[int](10, 30, 40)},
+		{"Remove-3", 10, true, SetOf[int](30, 40)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -212,15 +212,15 @@ func Test_hashSet_Remove(t *testing.T) {
 }
 
 func Test_hashSet_RemoveAll(t *testing.T) {
-	set := NewHashSetOf[int](50, 60, 70, 80, 10, 20, 30, 40)
+	set := SetOf[int](50, 60, 70, 80, 10, 20, 30, 40)
 	tests := []struct {
 		name    string
 		arg     Collection[int]
 		want    int
 		wantSet Set[int]
 	}{
-		{"RemoveAll-1", NewHashSetOf[int](10, 50), 2, NewHashSetOf[int](60, 70, 80, 20, 30, 40)},
-		{"RemoveAll-2", NewHashSetOf[int](10, 50), 0, NewHashSetOf[int](60, 70, 80, 20, 30, 40)},
+		{"RemoveAll-1", SetOf[int](10, 50), 2, SetOf[int](60, 70, 80, 20, 30, 40)},
+		{"RemoveAll-2", SetOf[int](10, 50), 0, SetOf[int](60, 70, 80, 20, 30, 40)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -235,14 +235,14 @@ func Test_hashSet_RemoveAll(t *testing.T) {
 }
 
 func Test_hashSet_RemoveIf(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
+	set := SetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
 	tests := []struct {
 		name    string
 		arg     Predicate[int]
 		want    int
 		wantSet Set[int]
 	}{
-		{"RemoveAll-1", func(e int) bool { return e%2 == 0 }, 4, NewHashSetOf[int](1, 3, 5, 7)},
+		{"RemoveAll-1", func(e int) bool { return e%2 == 0 }, 4, SetOf[int](1, 3, 5, 7)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -257,16 +257,16 @@ func Test_hashSet_RemoveIf(t *testing.T) {
 }
 
 func Test_hashSet_RetainAll(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
+	set := SetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
 	tests := []struct {
 		name    string
 		arg     Collection[int]
 		want    int
 		wantSet Set[int]
 	}{
-		{"RetainAll-1", NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8), 0, NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8)},
-		{"RetainAll-2", NewHashSetOf[int](2, 6, 7), 5, NewHashSetOf[int](2, 6, 7)},
-		{"RetainAll-3", NewHashSetOf[int](), 3, NewHashSetOf[int]()},
+		{"RetainAll-1", SetOf[int](1, 2, 3, 4, 5, 6, 7, 8), 0, SetOf[int](1, 2, 3, 4, 5, 6, 7, 8)},
+		{"RetainAll-2", SetOf[int](2, 6, 7), 5, SetOf[int](2, 6, 7)},
+		{"RetainAll-3", SetOf[int](), 3, SetOf[int]()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -281,7 +281,7 @@ func Test_hashSet_RetainAll(t *testing.T) {
 }
 
 func Test_hashSet_Size(t *testing.T) {
-	set := NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
+	set := SetOf[int](1, 2, 3, 4, 5, 6, 7, 8)
 	if set.Size() != 8 {
 		t.Errorf("Size() = %v, want %v", set.Size(), 8)
 	}
@@ -297,7 +297,7 @@ func Test_hashSet_ToArray(t *testing.T) {
 		set  Set[int]
 		want []int
 	}{
-		{"ToArray-1", NewHashSetOf[int](1, 2, 3, 4, 5, 6, 7, 8), []int{1, 2, 3, 4, 5, 6, 7, 8}},
+		{"ToArray-1", SetOf[int](1, 2, 3, 4, 5, 6, 7, 8), []int{1, 2, 3, 4, 5, 6, 7, 8}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

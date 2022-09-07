@@ -18,6 +18,10 @@
 
 package collect
 
+import (
+	"github.com/yzrzr/go-util/constraints"
+)
+
 func equals[E comparable](a, b Collection[E]) bool {
 	if a == b {
 		return true
@@ -41,4 +45,32 @@ func equals[E comparable](a, b Collection[E]) bool {
 		}
 	}
 	return !(itr1.HasNext() || itr2.HasNext())
+}
+
+// SortLessOrdered 基础类型升序排序方法
+// 参数 asc 表示是否为升序
+// List.Sort(SortLessOrdered(true))
+func SortLessOrdered[E constraints.Ordered](aes bool) SortLess[E] {
+	if aes {
+		return func(e1, e2 E) bool {
+			return e1 < e2
+		}
+	}
+	return func(e1, e2 E) bool {
+		return e1 > e2
+	}
+}
+
+// SortLessComparable 基础类型降序排序方法
+// 参数 asc 表示是否为升序
+// List.Sort(SortLessComparable(true))
+func SortLessComparable[E constraints.Comparable[E]](aes bool) SortLess[E] {
+	if aes {
+		return func(e1, e2 E) bool {
+			return e1.Compare(e2) == -1
+		}
+	}
+	return func(e1, e2 E) bool {
+		return e1.Compare(e2) == 1
+	}
 }

@@ -21,15 +21,14 @@ package collect
 import (
 	"container/list"
 	"errors"
+	"math"
 )
 
 var (
 	ErrNoSuchElement = errors.New("no such element")
 	ErrIllegalState  = errors.New("illegal state")
+	ErrIteratorClose = errors.New("iterator is close")
 )
-
-var _ ListIterator[int] = (*listIterator[int])(nil)
-var _ ListIterator[int] = (*linkedListIterator[int])(nil)
 
 type ListIterator[E comparable] interface {
 	Iterator[E]
@@ -57,7 +56,9 @@ func newListIterator[E comparable](list List[E], start int) ListIterator[E] {
 
 type listIterator[E comparable] struct {
 	cursor, lastRet int
-	list            List[E]
+
+	isClose bool
+	list    List[E]
 }
 
 func (l *listIterator[E]) HasNext() bool {
@@ -65,6 +66,10 @@ func (l *listIterator[E]) HasNext() bool {
 }
 
 func (l *listIterator[E]) Next() (e E, err error) {
+	if l.isClose {
+		err = ErrIteratorClose
+		return
+	}
 	i := l.cursor
 	if i > l.list.Size() {
 		err = ErrNoSuchElement
@@ -80,6 +85,9 @@ func (l *listIterator[E]) Next() (e E, err error) {
 }
 
 func (l *listIterator[E]) Remove() error {
+	if l.isClose {
+		return ErrIteratorClose
+	}
 	if l.lastRet < 0 {
 		return ErrIllegalState
 	}
@@ -93,6 +101,9 @@ func (l *listIterator[E]) Remove() error {
 }
 
 func (l *listIterator[E]) ForEachRemaining(action Consumer[E]) error {
+	if l.isClose {
+		return ErrIteratorClose
+	}
 	size := l.list.Size()
 	var err error
 	var e E
@@ -114,6 +125,10 @@ func (l *listIterator[E]) HasPrevious() bool {
 }
 
 func (l *listIterator[E]) Previous() (e E, err error) {
+	if l.isClose {
+		err = ErrIteratorClose
+		return
+	}
 	i := l.cursor - 1
 	if i < 0 {
 		err = ErrNoSuchElement
@@ -136,6 +151,12 @@ func (l *listIterator[E]) PreviousIndex() int {
 	return l.cursor - 1
 }
 
+func (l *listIterator[E]) Close() {
+	l.isClose = true
+	l.cursor = math.MaxInt
+	l.lastRet = -1
+}
+
 func newLinkedListIterator[E comparable](list *linkedList[E], start int) ListIterator[E] {
 	e, _ := list.getElement(start)
 	return &linkedListIterator[E]{
@@ -149,6 +170,7 @@ type linkedListIterator[E comparable] struct {
 	cursor, lastRet *list.Element
 	list            *linkedList[E]
 	nextIndex       int
+	isClose         bool
 }
 
 func (l *linkedListIterator[E]) HasNext() bool {
@@ -156,6 +178,10 @@ func (l *linkedListIterator[E]) HasNext() bool {
 }
 
 func (l *linkedListIterator[E]) Next() (e E, err error) {
+	if l.isClose {
+		err = ErrIteratorClose
+		return
+	}
 	cur := l.cursor
 	if cur == nil {
 		err = ErrNoSuchElement
@@ -168,6 +194,9 @@ func (l *linkedListIterator[E]) Next() (e E, err error) {
 }
 
 func (l *linkedListIterator[E]) Remove() error {
+	if l.isClose {
+		return ErrIteratorClose
+	}
 	if l.lastRet == nil {
 		return ErrIllegalState
 	}
@@ -177,6 +206,9 @@ func (l *linkedListIterator[E]) Remove() error {
 }
 
 func (l *linkedListIterator[E]) ForEachRemaining(action Consumer[E]) error {
+	if l.isClose {
+		return ErrIteratorClose
+	}
 	var err error
 	cur := l.cursor
 	for cur != nil {
@@ -194,6 +226,10 @@ func (l *linkedListIterator[E]) HasPrevious() bool {
 }
 
 func (l *linkedListIterator[E]) Previous() (e E, err error) {
+	if l.isClose {
+		err = ErrIteratorClose
+		return
+	}
 	if l.nextIndex == 0 {
 		err = ErrNoSuchElement
 		return
@@ -214,4 +250,10 @@ func (l *linkedListIterator[E]) NextIndex() int {
 
 func (l *linkedListIterator[E]) PreviousIndex() int {
 	return l.nextIndex - 1
+}
+
+func (l *linkedListIterator[E]) Close() {
+	l.isClose = true
+	l.cursor = nil
+	l.lastRet = nil
 }
