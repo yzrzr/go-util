@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	set := collect.NewHashSet[int]()
+	set := collect.NewSet[int]()
 	set.Add(10)
 	set.Add(10)
 	set.Add(20)

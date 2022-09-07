@@ -7,13 +7,11 @@ import (
 )
 
 func main() {
-	list := collect.NewArrayList[int](8)
+	list := collect.NewList[int](collect.DefaultListConfig)
 	list.Add(1)
 	list.Add(2)
 	list.Add(3)
 	fmt.Println(list.ToArray()) // [1, 2, 3]
-	list.Sort(func(a, b int) bool {
-		return a > b
-	})
+	list.Sort(collect.SortLessOrdered[int](false))
 	fmt.Println(list.ToArray()) // [3, 2, 1]
 }
