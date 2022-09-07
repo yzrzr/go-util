@@ -6,6 +6,13 @@ This is a [Go] language util，contains generic collection interfaces and implem
 
 With [Go module][] support (Go 1.17+)
 
+## Interface
+
+- [Collection](collect/collection.go)
+- [List](collect/list.go)
+- [Set](collect/set.go)
+- [Iterator](collect/iterator.go)
+
 ## Example
 list:
 ```go

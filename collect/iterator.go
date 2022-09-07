@@ -18,6 +18,7 @@
 
 package collect
 
+// Iterator 集合迭代器接口
 type Iterator[E any] interface {
 	// HasNext 如果有更多的元素，则返回true
 	HasNext() bool
