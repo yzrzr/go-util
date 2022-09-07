@@ -37,7 +37,7 @@ type Pool[T any] struct {
 }
 
 func (t *Pool[T]) Get() T {
-	return t.Pool.Get()
+	return t.Pool.Get().(T)
 }
 
 func (t *Pool[T]) Put(x T) {
