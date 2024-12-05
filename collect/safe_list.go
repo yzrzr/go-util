@@ -23,12 +23,12 @@ import (
 	"sync"
 )
 
-type safeList[E comparable] struct {
+type safeList[E any] struct {
 	List[E]
 	*sync.RWMutex
 }
 
-func NewSafeList[E comparable](list List[E]) List[E] {
+func NewSafeList[E any](list List[E]) List[E] {
 	return &safeList[E]{
 		List:    list,
 		RWMutex: &sync.RWMutex{},
@@ -54,9 +54,7 @@ func (a *safeList[E]) Contains(e E) bool {
 }
 
 func (a *safeList[E]) Iterator() Iterator[E] {
-	a.RLock()
-	defer a.RUnlock()
-	return a.List.Iterator()
+	return a.ListIterator()
 }
 
 func (a *safeList[E]) ToArray() []E {
@@ -203,7 +201,7 @@ func (a *safeList[E]) SubList(fromIndex, toIndex int) List[E] {
 	return a.List.SubList(fromIndex, toIndex)
 }
 
-func (a *safeList[E]) String(fromIndex, toIndex int) string {
+func (a *safeList[E]) String() string {
 	a.RLock()
 	defer a.RUnlock()
 	return fmt.Sprintf("%+v", a.List)

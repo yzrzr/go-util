@@ -22,7 +22,7 @@ import (
 	"github.com/yzrzr/go-util/constraints"
 )
 
-func equals[E comparable](a, b Collection[E]) bool {
+func equals[E any](a, b Collection[E]) bool {
 	if a == b {
 		return true
 	}
@@ -31,16 +31,11 @@ func equals[E comparable](a, b Collection[E]) bool {
 	}
 	itr1 := a.Iterator()
 	itr2 := b.Iterator()
+	comparator := a.GetEqualComparator()
 	for itr1.HasNext() && itr2.HasNext() {
-		e1, err := itr1.Next()
-		if err != nil {
-			return false
-		}
-		e2, err := itr2.Next()
-		if err != nil {
-			return false
-		}
-		if e1 != e2 {
+		e1, err1 := itr1.Next()
+		e2, err2 := itr2.Next()
+		if err1 != nil || err2 != nil || !comparator.Equal(e1, e2) {
 			return false
 		}
 	}

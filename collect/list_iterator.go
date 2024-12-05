@@ -30,7 +30,7 @@ var (
 	ErrIteratorClose = errors.New("iterator is close")
 )
 
-type ListIterator[E comparable] interface {
+type ListIterator[E any] interface {
 	Iterator[E]
 
 	// HasPrevious 如果有上一个元素，则返回true
@@ -46,7 +46,7 @@ type ListIterator[E comparable] interface {
 	PreviousIndex() int
 }
 
-func newListIterator[E comparable](list List[E], start int) ListIterator[E] {
+func newListIterator[E any](list List[E], start int) ListIterator[E] {
 	return &listIterator[E]{
 		lastRet: -1,
 		cursor:  start,
@@ -54,7 +54,9 @@ func newListIterator[E comparable](list List[E], start int) ListIterator[E] {
 	}
 }
 
-type listIterator[E comparable] struct {
+type listIterator[E any] struct {
+	// cursor 当前指针指向位置，下一次调用 Next() 方法返回 cursor 位置的值，每次调用 Next() 方法后，cursor 的值都会加一
+	// lastRet 上一次调用 Next() 方法是的 cursor 值
 	cursor, lastRet int
 
 	isClose bool
@@ -62,6 +64,9 @@ type listIterator[E comparable] struct {
 }
 
 func (l *listIterator[E]) HasNext() bool {
+	if l.isClose {
+		return false
+	}
 	return l.cursor < l.list.Size()
 }
 
@@ -71,7 +76,7 @@ func (l *listIterator[E]) Next() (e E, err error) {
 		return
 	}
 	i := l.cursor
-	if i > l.list.Size() {
+	if i >= l.list.Size() {
 		err = ErrNoSuchElement
 		return
 	}
@@ -121,7 +126,7 @@ func (l *listIterator[E]) ForEachRemaining(action Consumer[E]) error {
 }
 
 func (l *listIterator[E]) HasPrevious() bool {
-	return l.cursor != 0
+	return l.cursor != 0 && l.isClose == false
 }
 
 func (l *listIterator[E]) Previous() (e E, err error) {
@@ -129,7 +134,7 @@ func (l *listIterator[E]) Previous() (e E, err error) {
 		err = ErrIteratorClose
 		return
 	}
-	i := l.cursor - 1
+	i := l.lastRet
 	if i < 0 {
 		err = ErrNoSuchElement
 		return
@@ -139,7 +144,7 @@ func (l *listIterator[E]) Previous() (e E, err error) {
 		return
 	}
 	l.cursor = i
-	l.lastRet = i
+	l.lastRet = i - 1
 	return
 }
 
@@ -148,7 +153,7 @@ func (l *listIterator[E]) NextIndex() int {
 }
 
 func (l *listIterator[E]) PreviousIndex() int {
-	return l.cursor - 1
+	return l.lastRet
 }
 
 func (l *listIterator[E]) Close() {
@@ -157,7 +162,7 @@ func (l *listIterator[E]) Close() {
 	l.lastRet = -1
 }
 
-func newLinkedListIterator[E comparable](list *linkedList[E], start int) ListIterator[E] {
+func newLinkedListIterator[E any](list *linkedList[E], start int) ListIterator[E] {
 	e, _ := list.getElement(start)
 	return &linkedListIterator[E]{
 		cursor:    e,
@@ -166,7 +171,9 @@ func newLinkedListIterator[E comparable](list *linkedList[E], start int) ListIte
 	}
 }
 
-type linkedListIterator[E comparable] struct {
+type linkedListIterator[E any] struct {
+	// cursor 当前指针指向元素，下一次调用 Next() 方法返回 cursor 的值
+	// lastRet 上一次调用 Next() 方法时的 cursor 的值
 	cursor, lastRet *list.Element
 	list            *linkedList[E]
 	nextIndex       int
@@ -174,7 +181,7 @@ type linkedListIterator[E comparable] struct {
 }
 
 func (l *linkedListIterator[E]) HasNext() bool {
-	return l.cursor != nil
+	return l.cursor != nil && l.isClose == false
 }
 
 func (l *linkedListIterator[E]) Next() (e E, err error) {
@@ -222,7 +229,7 @@ func (l *linkedListIterator[E]) ForEachRemaining(action Consumer[E]) error {
 }
 
 func (l *linkedListIterator[E]) HasPrevious() bool {
-	return l.nextIndex > 0
+	return l.nextIndex > 0 && l.isClose == false
 }
 
 func (l *linkedListIterator[E]) Previous() (e E, err error) {
@@ -230,16 +237,13 @@ func (l *linkedListIterator[E]) Previous() (e E, err error) {
 		err = ErrIteratorClose
 		return
 	}
-	if l.nextIndex == 0 {
+	if !l.HasPrevious() {
 		err = ErrNoSuchElement
 		return
 	}
-	var element *list.Element
-	if l.cursor == nil {
-		l.cursor = l.list.list.Back()
-	} else {
-		l.cursor = l.cursor.Prev()
-	}
+	element := l.lastRet
+	l.cursor = l.lastRet
+	l.lastRet = l.cursor.Prev()
 	l.nextIndex--
 	return element.Value.(E), nil
 }

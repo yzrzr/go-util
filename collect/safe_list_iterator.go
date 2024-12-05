@@ -25,19 +25,21 @@ import (
 // newSafeListIterator 创建安全的迭代器
 // 一旦调用了迭代器的 Remove 方法来修改 List 集合，m 锁将会升级为写锁
 // 安全的迭代器使用完之后必须主动调用 Close 进行关闭，释放锁。
-func newSafeListIterator[E comparable](list ListIterator[E], m *sync.RWMutex) ListIterator[E] {
+func newSafeListIterator[E any](list ListIterator[E], m *sync.RWMutex) ListIterator[E] {
 	m.RLock()
 	return &safeListIterator[E]{
 		ListIterator: list,
 		m:            m,
+		RWMutex:      &sync.RWMutex{},
 	}
 }
 
-type safeListIterator[E comparable] struct {
+type safeListIterator[E any] struct {
 	ListIterator[E]
 	*sync.RWMutex
-	m   *sync.RWMutex
-	mup bool
+	m       *sync.RWMutex
+	mup     bool
+	isClose bool
 }
 
 func (l *safeListIterator[E]) HasNext() bool {
@@ -47,6 +49,7 @@ func (l *safeListIterator[E]) HasNext() bool {
 }
 
 func (l *safeListIterator[E]) Next() (e E, err error) {
+	// 获取下一个元素会更新内部指针，所有需要写锁
 	l.RWMutex.Lock()
 	defer l.RWMutex.Unlock()
 	return l.ListIterator.Next()
@@ -55,6 +58,10 @@ func (l *safeListIterator[E]) Next() (e E, err error) {
 func (l *safeListIterator[E]) Remove() error {
 	l.RWMutex.Lock()
 	defer l.RWMutex.Unlock()
+	if l.isClose {
+		return ErrIteratorClose
+	}
+	// 第一次调用，升级锁
 	if !l.mup {
 		l.m.RUnlock()
 		l.m.Lock()
@@ -98,8 +105,9 @@ func (l *safeListIterator[E]) Close() {
 	defer l.RWMutex.Unlock()
 	l.ListIterator.Close()
 	if l.mup {
-		l.m.RLock()
+		l.m.Unlock()
 	} else {
 		l.m.RUnlock()
 	}
+	l.isClose = true
 }

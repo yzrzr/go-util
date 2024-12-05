@@ -18,8 +18,13 @@
 
 package collect
 
+import (
+	"github.com/yzrzr/go-util/constraints"
+	"reflect"
+)
+
 // List 有序集合接口
-type List[E comparable] interface {
+type List[E any] interface {
 	Collection[E]
 
 	// ReplaceAll 将该列表的每个元素替换为 operator 运算符应用于该元素的结果
@@ -81,6 +86,10 @@ type ListConfig struct {
 	Safe bool
 	// DataStruct 底层实现结构，默认为切片实现
 	DataStruct int
+	// EqualComparator 元素相等比较函数
+	// 如何元素是可比较的如：int、string等，可以不设置，默认使用 == 比较
+	// 如果元素不可比较，需要设置改字段，如果没有设置当调用需要比较元素的方法时，比较结果永远返回false
+	EqualComparator constraints.EqualComparator[any]
 }
 
 // DefaultListConfig 默认配置
@@ -90,19 +99,53 @@ var DefaultListConfig = ListConfig{
 	DataStruct:      DataStructSlice,
 }
 
+type ListOption func(config *ListConfig)
+
 // NewList 根据配置创建一个 List
-func NewList[E comparable](config ListConfig) List[E] {
+func NewList[E any](config ListConfig, options ...ListOption) List[E] {
+	for _, option := range options {
+		option(&config)
+	}
 	if config.InitialCapacity < 1 {
 		config.InitialCapacity = 16
 	}
+	if config.EqualComparator == nil {
+		config.EqualComparator = DefaultEqualFunc()
+	}
 	var list List[E]
 	if config.DataStruct == DataStructLinked {
-		list = NewLinkedList[E]()
+		list = NewLinkedList[E](AnyEqualComparableFunc[E](func(v1, v2 E) bool {
+			return config.EqualComparator.Equal(v1, v2)
+		}))
 	} else {
-		list = NewArrayList[E](config.InitialCapacity)
+		list = NewArrayList[E](config.InitialCapacity, AnyEqualComparableFunc[E](func(v1, v2 E) bool {
+			return config.EqualComparator.Equal(v1, v2)
+		}))
 	}
 	if config.Safe {
 		list = NewSafeList[E](list)
 	}
 	return list
+}
+
+func WithEqualFunc[E any](f func(v1, v2 E) bool) ListOption {
+	return func(config *ListConfig) {
+		config.EqualComparator = AnyEqualComparableFunc[any](func(v1, v2 any) bool {
+			return f(v1.(E), v2.(E))
+		})
+	}
+}
+
+func DefaultEqualFunc() constraints.EqualComparator[any] {
+	return AnyEqualComparableFunc[any](func(v1, v2 any) bool {
+		switch v1.(type) {
+		case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, uint, float32, float64, string:
+			return v1 == v2
+		}
+		val := reflect.ValueOf(v1)
+		if val.Type().Comparable() {
+			return v1 == v2
+		}
+		return reflect.DeepEqual(v1, v2)
+	})
 }

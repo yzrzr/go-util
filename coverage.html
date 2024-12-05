@@ -1,0 +1,1973 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>collect: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/yzrzr/go-util/collect/array_list.go (97.3%)</option>
+				
+				<option value="file1">github.com/yzrzr/go-util/collect/collection.go (100.0%)</option>
+				
+				<option value="file2">github.com/yzrzr/go-util/collect/func.go (100.0%)</option>
+				
+				<option value="file3">github.com/yzrzr/go-util/collect/hash_set.go (98.3%)</option>
+				
+				<option value="file4">github.com/yzrzr/go-util/collect/linked_list.go (99.2%)</option>
+				
+				<option value="file5">github.com/yzrzr/go-util/collect/list.go (100.0%)</option>
+				
+				<option value="file6">github.com/yzrzr/go-util/collect/list_iterator.go (96.3%)</option>
+				
+				<option value="file7">github.com/yzrzr/go-util/collect/safe_list.go (100.0%)</option>
+				
+				<option value="file8">github.com/yzrzr/go-util/collect/safe_list_iterator.go (100.0%)</option>
+				
+				<option value="file9">github.com/yzrzr/go-util/collect/set.go (100.0%)</option>
+				
+				<option value="file10">github.com/yzrzr/go-util/collect/set_iterator.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "fmt"
+        "github.com/yzrzr/go-util/constraints"
+        "sort"
+        "strings"
+)
+
+// NewArrayList Abstract Factory
+func NewArrayList[E any](initialCapacity int, comparator constraints.EqualComparator[E]) List[E] <span class="cov8" title="1">{
+        return &amp;arrayList[E]{
+                elementData: make([]E, initialCapacity),
+                capacity:    initialCapacity,
+                size:        0,
+                comparator:  comparator,
+        }
+}</span>
+
+type arrayList[E any] struct {
+        elementData []E
+        size        int
+        capacity    int
+        zeroVal     E
+        comparator  constraints.EqualComparator[E]
+}
+
+func (a *arrayList[E]) Size() int <span class="cov8" title="1">{
+        return a.size
+}</span>
+
+func (a *arrayList[E]) IsEmpty() bool <span class="cov8" title="1">{
+        return a.size == 0
+}</span>
+
+func (a *arrayList[E]) Contains(e E) bool <span class="cov8" title="1">{
+        return a.IndexOf(e) &gt;= 0
+}</span>
+
+func (a *arrayList[E]) Iterator() Iterator[E] <span class="cov8" title="1">{
+        return a.ListIterator()
+}</span>
+
+func (a *arrayList[E]) ToArray() []E <span class="cov8" title="1">{
+        if a.size == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">tmp := make([]E, a.size)
+        copy(tmp, a.elementData)
+        return tmp</span>
+}
+
+func (a *arrayList[E]) Add(e E) bool <span class="cov8" title="1">{
+        a.grow(a.size + 1)
+        a.elementData[a.size] = e
+        a.size++
+        return true
+}</span>
+
+func (a *arrayList[E]) Remove(e E) bool <span class="cov8" title="1">{
+        return a.RemoveIfN(func(o E) bool </span><span class="cov8" title="1">{
+                return a.comparator.Equal(e, o)
+        }</span>, 1) == 1
+}
+
+func (a *arrayList[E]) RemoveN(e E, n int) int <span class="cov8" title="1">{
+        return a.RemoveIfN(func(o E) bool </span><span class="cov8" title="1">{
+                return a.comparator.Equal(e, o)
+        }</span>, n)
+}
+
+func (a *arrayList[E]) ContainsAll(c Collection[E]) bool <span class="cov8" title="1">{
+        itr := c.Iterator()
+        for itr.HasNext() </span><span class="cov8" title="1">{
+                if e, err := itr.Next(); err != nil || !a.Contains(e) </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+func (a *arrayList[E]) AddAll(c Collection[E]) <span class="cov8" title="1">{
+        arr := c.ToArray()
+        num := len(arr)
+        if num == 0 </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">a.grow(num + a.size)
+        copy(a.elementData[a.size:], arr)
+        a.size += num</span>
+}
+
+func (a *arrayList[E]) RemoveAll(c Collection[E]) int <span class="cov8" title="1">{
+        return a.RemoveIfN(func(e E) bool </span><span class="cov8" title="1">{
+                return c.Contains(e)
+        }</span>, -1)
+}
+
+func (a *arrayList[E]) RemoveIf(filter Predicate[E]) int <span class="cov8" title="1">{
+        return a.RemoveIfN(filter, -1)
+}</span>
+
+func (a *arrayList[E]) RemoveIfN(filter Predicate[E], n int) int <span class="cov8" title="1">{
+        if n == 0 </span><span class="cov8" title="1">{
+                return 0
+        }</span> else<span class="cov8" title="1"> if n == -1 </span><span class="cov8" title="1">{
+                n = a.size
+        }</span>
+        <span class="cov8" title="1">var cnt int
+        indexSlice := make([]int, 0, 2)
+        for i := 0; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                if filter(a.elementData[i]) </span><span class="cov8" title="1">{
+                        indexSlice = append(indexSlice, i)
+                        cnt++
+                        if cnt == n </span><span class="cov8" title="1">{
+                                break</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">if cnt == 0 </span><span class="cov8" title="1">{
+                return 0
+        }</span>
+        <span class="cov8" title="1">var s, l, r, size int
+        s = indexSlice[0]
+        for i := 0; i &lt; cnt; </span><span class="cov8" title="1">{
+                l = indexSlice[i] + 1
+                for i &lt; cnt-1 &amp;&amp; indexSlice[i+1] == l </span><span class="cov8" title="1">{
+                        i++
+                        l++
+                }</span>
+                <span class="cov8" title="1">if i == cnt-1 </span><span class="cov8" title="1">{
+                        r = a.size
+                }</span> else<span class="cov8" title="1"> {
+                        r = indexSlice[i+1]
+                }</span>
+                <span class="cov8" title="1">size = r - l
+                copy(a.elementData[s:s+size], a.elementData[l:r])
+                s = s + size
+                i++</span>
+        }
+        <span class="cov8" title="1">for i := s; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                a.elementData[i] = a.zeroVal
+        }</span>
+        <span class="cov8" title="1">a.size -= cnt
+        return cnt</span>
+}
+
+func (a *arrayList[E]) RetainAll(c Collection[E]) int <span class="cov8" title="1">{
+        return a.RemoveIfN(func(e E) bool </span><span class="cov8" title="1">{
+                return !c.Contains(e)
+        }</span>, -1)
+}
+
+func (a *arrayList[E]) Clear() <span class="cov8" title="1">{
+        for i := 0; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                a.elementData[i] = a.zeroVal
+        }</span>
+        <span class="cov8" title="1">a.size = 0</span>
+}
+
+func (a *arrayList[E]) Equals(c Collection[E]) bool <span class="cov8" title="1">{
+        return equals[E](a, c)
+}</span>
+
+func (a *arrayList[E]) ForEach(f Consumer[E]) error <span class="cov8" title="1">{
+        var err error
+        for _, v := range a.elementData </span><span class="cov8" title="1">{
+                err = f(v)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (a *arrayList[E]) ReplaceAll(operator UnaryOperator[E]) <span class="cov8" title="1">{
+        if operator == nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">for i := 0; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                a.elementData[i] = operator(a.elementData[i])
+        }</span>
+}
+
+func (a *arrayList[E]) Sort(less SortLess[E]) <span class="cov8" title="1">{
+        sort.Slice(a.elementData[:a.size], func(i, j int) bool </span><span class="cov8" title="1">{
+                return less(a.elementData[i], a.elementData[j])
+        }</span>)
+}
+
+func (a *arrayList[E]) Get(index int) (E, error) <span class="cov8" title="1">{
+        if err := a.rangeCheck(index); err != nil </span><span class="cov8" title="1">{
+                return a.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">return a.elementData[index], nil</span>
+}
+
+func (a *arrayList[E]) Set(index int, e E) (E, error) <span class="cov8" title="1">{
+        old, err := a.Get(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return a.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">a.elementData[index] = e
+        return old, nil</span>
+}
+
+func (a *arrayList[E]) AddAt(index int, e E) error <span class="cov8" title="1">{
+        if err := a.rangeCheck(index); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">a.grow(a.size + 1)
+        copy(a.elementData[index+1:], a.elementData[index:])
+        a.elementData[index] = e
+        a.size++
+        return nil</span>
+}
+
+func (a *arrayList[E]) RemoveAt(index int) (E, error) <span class="cov8" title="1">{
+        old, err := a.Get(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return a.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">copy(a.elementData[index:], a.elementData[index+1:])
+        a.size--
+        return old, nil</span>
+}
+
+func (a *arrayList[E]) IndexOf(e E) int <span class="cov8" title="1">{
+        for i := 0; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                if a.comparator.Equal(e, a.elementData[i]) </span><span class="cov8" title="1">{
+                        return i
+                }</span>
+        }
+        <span class="cov8" title="1">return -1</span>
+}
+
+func (a *arrayList[E]) LastIndexOf(e E) int <span class="cov8" title="1">{
+        for i := a.size - 1; i &gt;= 0; i-- </span><span class="cov8" title="1">{
+                if a.comparator.Equal(e, a.elementData[i]) </span><span class="cov8" title="1">{
+                        return i
+                }</span>
+        }
+        <span class="cov8" title="1">return -1</span>
+}
+
+func (a *arrayList[E]) ListIterator() ListIterator[E] <span class="cov8" title="1">{
+        return a.ListIteratorAt(0)
+}</span>
+
+func (a *arrayList[E]) ListIteratorAt(index int) ListIterator[E] <span class="cov8" title="1">{
+        return newListIterator[E](a, index)
+}</span>
+
+func (a *arrayList[E]) SubList(fromIndex, toIndex int) List[E] <span class="cov8" title="1">{
+        data := make([]E, toIndex-fromIndex)
+        copy(data, a.elementData[fromIndex:toIndex])
+        return &amp;arrayList[E]{
+                elementData: data,
+                capacity:    cap(data),
+                size:        len(data),
+                comparator:  a.comparator,
+        }
+}</span>
+
+func (a *arrayList[E]) grow(minCapacity int) <span class="cov8" title="1">{
+        if a.capacity &gt;= minCapacity </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">newCapacity := a.capacity
+        doubleCapacity := a.capacity &lt;&lt; 1
+        if minCapacity &gt; doubleCapacity </span><span class="cov8" title="1">{
+                newCapacity = minCapacity
+        }</span> else<span class="cov8" title="1"> {
+                if a.capacity &lt; 256 </span><span class="cov8" title="1">{
+                        newCapacity = doubleCapacity
+                }</span> else<span class="cov8" title="1"> {
+                        for 0 &lt; newCapacity &amp;&amp; newCapacity &lt; minCapacity </span><span class="cov8" title="1">{
+                                newCapacity += (newCapacity + 3*256) / 4
+                        }</span>
+                        <span class="cov8" title="1">if newCapacity &lt;= 0 </span><span class="cov0" title="0">{
+                                newCapacity = minCapacity
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">tmp := make([]E, newCapacity)
+        copy(tmp, a.elementData)
+        a.elementData = tmp
+        a.capacity = newCapacity</span>
+}
+
+func (a *arrayList[E]) rangeCheck(index int) error <span class="cov8" title="1">{
+        if index &lt; 0 || index &gt;= a.size </span><span class="cov8" title="1">{
+                return fmt.Errorf("index out of range [%d] with length %d", index, a.size)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (a *arrayList[E]) String() string <span class="cov8" title="1">{
+        build := strings.Builder{}
+        build.WriteByte('[')
+        for i := 0; i &lt; a.size; i++ </span><span class="cov8" title="1">{
+                build.WriteString(fmt.Sprintf("%v", a.elementData[i]))
+                if i &lt; a.size-1 </span><span class="cov8" title="1">{
+                        build.WriteByte(' ')
+                }</span>
+        }
+        <span class="cov8" title="1">build.WriteByte(']')
+        return build.String()</span>
+}
+
+func (a *arrayList[E]) GetEqualComparator() constraints.EqualComparator[E] <span class="cov8" title="1">{
+        return a.comparator
+}</span>
+
+//---- sort.Interface -----
+
+type sortList[E any] struct {
+        data []E
+        less SortLess[E]
+        swap func(i, j int)
+}
+
+func (a sortList[E]) Len() int <span class="cov8" title="1">{
+        return len(a.data)
+}</span>
+
+func (a sortList[E]) Less(i, j int) bool <span class="cov8" title="1">{
+        return a.less(a.data[i], a.data[j])
+}</span>
+
+func (a sortList[E]) Swap(i, j int) <span class="cov8" title="1">{
+        if a.swap != nil </span><span class="cov8" title="1">{
+                a.swap(i, j)
+        }</span> else<span class="cov0" title="0"> {
+                a.data[i], a.data[j] = a.data[j], a.data[i]
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import "github.com/yzrzr/go-util/constraints"
+
+// Collection 集合的根接口
+type Collection[E any] interface {
+        // Size 返回此集合中的元素数
+        Size() int
+
+        // IsEmpty 如果此集合不包含元素，则返回 true
+        IsEmpty() bool
+
+        // Contains 如果此集合包含指定的元素，则返回true
+        Contains(e E) bool
+
+        // Iterator 返回此集合中的元素的迭代器
+        Iterator() Iterator[E]
+
+        // ToArray 一个包含此集合中所有元素的数组
+        ToArray() []E
+
+        // Add 将元素加入到集合中。
+        // 如果元素是在本次调用中加入集合返回true，如果此集合不允许有重复元素，并且已包含指定的元素，则返回false。
+        Add(e E) bool
+
+        // Remove 从集合中移除一个指定的元素，只移除第一个指定的元素
+        // 成功移除返回true, 不存在指定元素返回false
+        Remove(e E) bool
+
+        // ContainsAll 如果此集合包含指定集合中的所有元素，则返回true，否则返回false
+        ContainsAll(c Collection[E]) bool
+
+        // AddAll 将指定集合中的所有元素添加到此集合。
+        AddAll(c Collection[E])
+
+        // RemoveAll 删除指定集合中包含的所有此集合的元素。 此调用返回后，此集合将不包含与指定集合相同的元素。
+        // 返回删除元素个数
+        RemoveAll(c Collection[E]) int
+
+        // RemoveIf 将集合中的元素应用filter函数，如果函数返回true元素将被移除
+        // 返回移除的元素个数
+        RemoveIf(filter Predicate[E]) int
+
+        // RetainAll 仅保留此集合中包含在指定集合中的元素。
+        // 返回移除的元素个数
+        RetainAll(c Collection[E]) int
+
+        // Clear 删除集合所有元素。
+        Clear()
+
+        // Equals 判断两个集合中元素是否相等
+        Equals(c Collection[E]) bool
+
+        // ForEach 迭代集合中的元素，直到所有元素都被处理或返回错误
+        ForEach(f Consumer[E]) error
+
+        // GetEqualComparator 返回元素比较器
+        GetEqualComparator() constraints.EqualComparator[E]
+}
+
+type AnyEqualComparableFunc[E any] func(v1, v2 E) bool
+
+func (f AnyEqualComparableFunc[E]) Equal(v1, v2 E) bool <span class="cov8" title="1">{
+        return f(v1, v2)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "github.com/yzrzr/go-util/constraints"
+)
+
+func equals[E any](a, b Collection[E]) bool <span class="cov8" title="1">{
+        if a == b </span><span class="cov8" title="1">{
+                return true
+        }</span>
+        <span class="cov8" title="1">if a.Size() != b.Size() </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">itr1 := a.Iterator()
+        itr2 := b.Iterator()
+        comparator := a.GetEqualComparator()
+        for itr1.HasNext() &amp;&amp; itr2.HasNext() </span><span class="cov8" title="1">{
+                e1, err1 := itr1.Next()
+                e2, err2 := itr2.Next()
+                if err1 != nil || err2 != nil || !comparator.Equal(e1, e2) </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return !(itr1.HasNext() || itr2.HasNext())</span>
+}
+
+// SortLessOrdered 基础类型升序排序方法
+// 参数 asc 表示是否为升序
+// List.Sort(SortLessOrdered(true))
+func SortLessOrdered[E constraints.Ordered](aes bool) SortLess[E] <span class="cov8" title="1">{
+        if aes </span><span class="cov8" title="1">{
+                return func(e1, e2 E) bool </span><span class="cov8" title="1">{
+                        return e1 &lt; e2
+                }</span>
+        }
+        <span class="cov8" title="1">return func(e1, e2 E) bool </span><span class="cov8" title="1">{
+                return e1 &gt; e2
+        }</span>
+}
+
+// SortLessComparable 基础类型降序排序方法
+// 参数 asc 表示是否为升序
+// List.Sort(SortLessComparable(true))
+func SortLessComparable[E constraints.Comparable[E]](aes bool) SortLess[E] <span class="cov8" title="1">{
+        if aes </span><span class="cov8" title="1">{
+                return func(e1, e2 E) bool </span><span class="cov8" title="1">{
+                        return e1.Compare(e2) == -1
+                }</span>
+        }
+        <span class="cov8" title="1">return func(e1, e2 E) bool </span><span class="cov8" title="1">{
+                return e1.Compare(e2) == 1
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "fmt"
+        "github.com/yzrzr/go-util/constraints"
+        "strings"
+)
+
+type hashSet[E comparable] struct {
+        data map[E]struct{}
+}
+
+func (h *hashSet[E]) Size() int <span class="cov8" title="1">{
+        return len(h.data)
+}</span>
+
+func (h *hashSet[E]) IsEmpty() bool <span class="cov8" title="1">{
+        return h.Size() == 0
+}</span>
+
+func (h *hashSet[E]) Contains(e E) bool <span class="cov8" title="1">{
+        _, ok := h.data[e]
+        return ok
+}</span>
+
+func (h *hashSet[E]) Iterator() Iterator[E] <span class="cov8" title="1">{
+        return NewSetIterator[E](h)
+}</span>
+
+func (h *hashSet[E]) ToArray() []E <span class="cov8" title="1">{
+        arr := make([]E, 0, h.Size())
+        for v := range h.data </span><span class="cov8" title="1">{
+                arr = append(arr, v)
+        }</span>
+        <span class="cov8" title="1">return arr</span>
+}
+
+func (h *hashSet[E]) Add(e E) bool <span class="cov8" title="1">{
+        if _, ok := h.data[e]; ok </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">h.data[e] = struct{}{}
+        return true</span>
+}
+
+func (h *hashSet[E]) Remove(e E) bool <span class="cov8" title="1">{
+        if _, ok := h.data[e]; ok </span><span class="cov8" title="1">{
+                delete(h.data, e)
+                return true
+        }</span>
+        <span class="cov8" title="1">return false</span>
+}
+
+func (h *hashSet[E]) ContainsAll(c Collection[E]) bool <span class="cov8" title="1">{
+        itr := c.Iterator()
+        for itr.HasNext() </span><span class="cov8" title="1">{
+                if e, err := itr.Next(); err != nil || !h.Contains(e) </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+func (h *hashSet[E]) AddAll(c Collection[E]) <span class="cov8" title="1">{
+        _ = c.ForEach(func(e E) error </span><span class="cov8" title="1">{
+                h.data[e] = struct{}{}
+                return nil
+        }</span>)
+}
+
+func (h *hashSet[E]) RemoveAll(c Collection[E]) int <span class="cov8" title="1">{
+        return h.RemoveIf(func(e E) bool </span><span class="cov8" title="1">{
+                return c.Contains(e)
+        }</span>)
+}
+
+func (h *hashSet[E]) RemoveIf(filter Predicate[E]) int <span class="cov8" title="1">{
+        var cnt int
+        for k := range h.data </span><span class="cov8" title="1">{
+                if filter(k) </span><span class="cov8" title="1">{
+                        delete(h.data, k)
+                        cnt++
+                }</span>
+        }
+        <span class="cov8" title="1">return cnt</span>
+}
+
+func (h *hashSet[E]) RetainAll(c Collection[E]) int <span class="cov8" title="1">{
+        return h.RemoveIf(func(e E) bool </span><span class="cov8" title="1">{
+                return !c.Contains(e)
+        }</span>)
+}
+
+func (h *hashSet[E]) Clear() <span class="cov8" title="1">{
+        h.data = make(map[E]struct{})
+}</span>
+
+func (h *hashSet[E]) Equals(c Collection[E]) bool <span class="cov8" title="1">{
+        if h == c </span><span class="cov8" title="1">{
+                return true
+        }</span>
+        <span class="cov8" title="1">if h.Size() != c.Size() </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">return h.ContainsAll(c)</span>
+}
+
+func (h *hashSet[E]) ForEach(f Consumer[E]) error <span class="cov8" title="1">{
+        var err error
+        for k := range h.data </span><span class="cov8" title="1">{
+                if err = f(k); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (h *hashSet[E]) GetEqualComparator() constraints.EqualComparator[E] <span class="cov0" title="0">{
+        return nil
+}</span>
+
+func (h *hashSet[E]) String() string <span class="cov8" title="1">{
+        build := strings.Builder{}
+        build.WriteByte('[')
+        l := h.Size()
+        i := 0
+        for v := range h.data </span><span class="cov8" title="1">{
+                build.WriteString(fmt.Sprintf("%v", v))
+                if i &lt; l-1 </span><span class="cov8" title="1">{
+                        build.WriteByte(' ')
+                }</span>
+                <span class="cov8" title="1">i++</span>
+        }
+        <span class="cov8" title="1">build.WriteByte(']')
+        return build.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "container/list"
+        "fmt"
+        "github.com/yzrzr/go-util/constraints"
+        "sort"
+        "strings"
+)
+
+func NewLinkedList[E any](comparator constraints.EqualComparator[E]) List[E] <span class="cov8" title="1">{
+        return &amp;linkedList[E]{
+                list:       list.New(),
+                comparator: comparator,
+        }
+}</span>
+
+type linkedList[E any] struct {
+        list       *list.List
+        zeroVal    E
+        comparator constraints.EqualComparator[E]
+}
+
+func (l *linkedList[E]) Size() int <span class="cov8" title="1">{
+        return l.list.Len()
+}</span>
+
+func (l *linkedList[E]) IsEmpty() bool <span class="cov8" title="1">{
+        return l.list.Len() == 0
+}</span>
+
+func (l *linkedList[E]) Contains(e E) bool <span class="cov8" title="1">{
+        return l.IndexOf(e) &gt;= 0
+}</span>
+
+func (l *linkedList[E]) Iterator() Iterator[E] <span class="cov8" title="1">{
+        return l.ListIterator()
+}</span>
+
+func (l *linkedList[E]) ToArray() []E <span class="cov8" title="1">{
+        size := l.Size()
+        if size == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">res := make([]E, size)
+        for e, i := l.list.Front(), 0; e != nil; e, i = e.Next(), i+1 </span><span class="cov8" title="1">{
+                res[i] = e.Value.(E)
+        }</span>
+        <span class="cov8" title="1">return res</span>
+}
+
+func (l *linkedList[E]) Add(e E) bool <span class="cov8" title="1">{
+        l.list.PushBack(e)
+        return true
+}</span>
+
+func (l *linkedList[E]) Remove(e E) bool <span class="cov8" title="1">{
+        return l.RemoveIfN(func(o E) bool </span><span class="cov8" title="1">{
+                return l.comparator.Equal(e, o)
+        }</span>, 1) == 1
+}
+
+func (l *linkedList[E]) RemoveN(e E, n int) int <span class="cov8" title="1">{
+        return l.RemoveIfN(func(o E) bool </span><span class="cov8" title="1">{
+                return l.comparator.Equal(e, o)
+        }</span>, n)
+}
+
+func (l *linkedList[E]) ContainsAll(c Collection[E]) bool <span class="cov8" title="1">{
+        itr := c.Iterator()
+        for itr.HasNext() </span><span class="cov8" title="1">{
+                if e, err := itr.Next(); err != nil || !l.Contains(e) </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+func (l *linkedList[E]) AddAll(c Collection[E]) <span class="cov8" title="1">{
+        c.ForEach(func(e E) error </span><span class="cov8" title="1">{
+                l.list.PushBack(e)
+                return nil
+        }</span>)
+}
+
+func (l *linkedList[E]) RemoveAll(c Collection[E]) int <span class="cov8" title="1">{
+        return l.RemoveIfN(func(e E) bool </span><span class="cov8" title="1">{
+                return c.Contains(e)
+        }</span>, -1)
+}
+
+func (l *linkedList[E]) RemoveIf(filter Predicate[E]) int <span class="cov8" title="1">{
+        return l.RemoveIfN(filter, -1)
+}</span>
+
+func (l *linkedList[E]) RemoveIfN(filter Predicate[E], n int) int <span class="cov8" title="1">{
+        if n == 0 </span><span class="cov8" title="1">{
+                return 0
+        }</span> else<span class="cov8" title="1"> if n == -1 </span><span class="cov8" title="1">{
+                n = l.Size()
+        }</span>
+        <span class="cov8" title="1">var cnt int
+        for cur, next := l.list.Front(), l.list.Front(); cur != nil; cur = next </span><span class="cov8" title="1">{
+                next = cur.Next()
+                if filter(cur.Value.(E)) </span><span class="cov8" title="1">{
+                        l.removeElement(cur)
+                        cnt++
+                        if cnt == n </span><span class="cov8" title="1">{
+                                break</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return cnt</span>
+}
+
+func (l *linkedList[E]) RetainAll(c Collection[E]) int <span class="cov8" title="1">{
+        return l.RemoveIfN(func(e E) bool </span><span class="cov8" title="1">{
+                return !c.Contains(e)
+        }</span>, -1)
+}
+
+func (l *linkedList[E]) Clear() <span class="cov8" title="1">{
+        l.RemoveIfN(func(e E) bool </span><span class="cov8" title="1">{
+                return true
+        }</span>, -1)
+}
+
+func (l *linkedList[E]) Equals(c Collection[E]) bool <span class="cov8" title="1">{
+        return equals[E](l, c)
+}</span>
+
+func (l *linkedList[E]) ForEach(f Consumer[E]) error <span class="cov8" title="1">{
+        var err error
+        for cur := l.list.Front(); cur != nil; cur = cur.Next() </span><span class="cov8" title="1">{
+                if err = f(cur.Value.(E)); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (l *linkedList[E]) ReplaceAll(operator UnaryOperator[E]) <span class="cov8" title="1">{
+        if operator == nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">for cur := l.list.Front(); cur != nil; cur = cur.Next() </span><span class="cov8" title="1">{
+                cur.Value = operator(cur.Value.(E))
+        }</span>
+}
+
+func (l *linkedList[E]) Sort(less SortLess[E]) <span class="cov8" title="1">{
+        data := make([]*list.Element, l.Size())
+        for cur, i := l.list.Front(), 0; cur != nil; cur, i = cur.Next(), i+1 </span><span class="cov8" title="1">{
+                data[i] = cur
+        }</span>
+        <span class="cov8" title="1">sl := sortList[*list.Element]{
+                data: data,
+                less: func(e1, e2 *list.Element) bool </span><span class="cov8" title="1">{
+                        return less(e1.Value.(E), e2.Value.(E))
+                }</span>,
+                swap: func(i, j int) <span class="cov8" title="1">{
+                        data[i].Value, data[j].Value = data[j].Value, data[i].Value
+                }</span>,
+        }
+        <span class="cov8" title="1">sort.Sort(sl)
+        for cur, i := l.list.Front(), 0; cur != nil; cur, i = cur.Next(), i+1 </span><span class="cov8" title="1">{
+                cur.Value = data[i].Value
+        }</span>
+}
+
+func (l *linkedList[E]) Get(index int) (E, error) <span class="cov8" title="1">{
+        element, err := l.getElement(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return l.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">return element.Value.(E), nil</span>
+}
+
+func (l *linkedList[E]) Set(index int, e E) (E, error) <span class="cov8" title="1">{
+        element, err := l.getElement(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return l.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">old := element.Value.(E)
+        element.Value = e
+        return old, nil</span>
+}
+
+func (l *linkedList[E]) AddAt(index int, e E) error <span class="cov8" title="1">{
+        element, err := l.getElement(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">l.list.InsertBefore(e, element)
+        return nil</span>
+}
+
+func (l *linkedList[E]) RemoveAt(index int) (E, error) <span class="cov8" title="1">{
+        element, err := l.getElement(index)
+        if err != nil </span><span class="cov8" title="1">{
+                return l.zeroVal, err
+        }</span>
+        <span class="cov8" title="1">old := element.Value.(E)
+        l.removeElement(element)
+        return old, nil</span>
+}
+
+func (l *linkedList[E]) IndexOf(e E) int <span class="cov8" title="1">{
+        for element, index := l.list.Front(), 0; element != nil; element, index = element.Next(), index+1 </span><span class="cov8" title="1">{
+                if l.comparator.Equal(e, element.Value.(E)) </span><span class="cov8" title="1">{
+                        return index
+                }</span>
+        }
+        <span class="cov8" title="1">return -1</span>
+}
+
+func (l *linkedList[E]) LastIndexOf(e E) int <span class="cov8" title="1">{
+        for element, index := l.list.Back(), l.Size()-1; element != nil; element, index = element.Prev(), index-1 </span><span class="cov8" title="1">{
+                if l.comparator.Equal(e, element.Value.(E)) </span><span class="cov8" title="1">{
+                        return index
+                }</span>
+        }
+        <span class="cov8" title="1">return -1</span>
+}
+
+func (l *linkedList[E]) ListIterator() ListIterator[E] <span class="cov8" title="1">{
+        return l.ListIteratorAt(0)
+}</span>
+
+func (l *linkedList[E]) ListIteratorAt(index int) ListIterator[E] <span class="cov8" title="1">{
+        return newLinkedListIterator[E](l, index)
+}</span>
+
+func (l *linkedList[E]) SubList(fromIndex, toIndex int) List[E] <span class="cov8" title="1">{
+        newLinkedList := NewLinkedList[E](l.comparator)
+        itr := l.ListIteratorAt(fromIndex)
+        for itr.NextIndex() &lt; toIndex &amp;&amp; itr.HasNext() </span><span class="cov8" title="1">{
+                e, _ := itr.Next()
+                newLinkedList.Add(e)
+        }</span>
+        <span class="cov8" title="1">return newLinkedList</span>
+}
+
+func (l *linkedList[E]) GetEqualComparator() constraints.EqualComparator[E] <span class="cov8" title="1">{
+        return l.comparator
+}</span>
+
+func (l *linkedList[E]) String() string <span class="cov8" title="1">{
+        build := strings.Builder{}
+        build.WriteByte('[')
+        for cur := l.list.Front(); cur != nil; cur = cur.Next() </span><span class="cov8" title="1">{
+                build.WriteString(fmt.Sprintf("%v", cur.Value))
+                if cur.Next() != nil </span><span class="cov8" title="1">{
+                        build.WriteByte(' ')
+                }</span>
+        }
+        <span class="cov8" title="1">build.WriteByte(']')
+        return build.String()</span>
+}
+
+func (l *linkedList[E]) getElement(index int) (*list.Element, error) <span class="cov8" title="1">{
+        if err := l.rangeCheck(index); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if index &lt; (l.Size() &gt;&gt; 1) </span><span class="cov8" title="1">{
+                cur := l.list.Front()
+                for i := 0; i &lt; index; i++ </span><span class="cov8" title="1">{
+                        cur = cur.Next()
+                }</span>
+                <span class="cov8" title="1">return cur, nil</span>
+        }
+        <span class="cov8" title="1">cur := l.list.Back()
+        for i := l.Size() - 1; i &gt; index; i-- </span><span class="cov8" title="1">{
+                cur = cur.Prev()
+        }</span>
+        <span class="cov8" title="1">return cur, nil</span>
+}
+
+func (l *linkedList[E]) removeElement(e *list.Element) <span class="cov8" title="1">{
+        l.list.Remove(e)
+}</span>
+
+func (l *linkedList[E]) rangeCheck(index int) error <span class="cov8" title="1">{
+        if index &lt; 0 || index &gt;= l.Size() </span><span class="cov8" title="1">{
+                return fmt.Errorf("index out of range [%d] with length %d", index, l.Size())
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "github.com/yzrzr/go-util/constraints"
+        "reflect"
+)
+
+// List 有序集合接口
+type List[E any] interface {
+        Collection[E]
+
+        // ReplaceAll 将该列表的每个元素替换为 operator 运算符应用于该元素的结果
+        ReplaceAll(operator UnaryOperator[E])
+
+        // Sort 对集合元素进行排序。
+        Sort(less SortLess[E])
+
+        // Get 返回此列表中指定位置的元素。索引不在有效范围会返回越界错误
+        Get(index int) (E, error)
+
+        // Set 用指定的元素替换此列表中指定位置的元素。索引不在有效范围会返回越界错误
+        // 返回旧值
+        Set(index int, e E) (E, error)
+
+        // AddAt 将指定的元素插入此列表中的指定位置。 将当前位于该位置的元素（如果有）及后面的元素元素向后移动。
+        AddAt(index int, e E) error
+
+        // RemoveAt 删除该列表中指定位置的元素。 将后续元素向左移动。 返回被删除的元素。索引不在有效范围会返回越界错误
+        RemoveAt(index int) (E, error)
+
+        // IndexOf 返回此列表中指定元素的第一次出现的索引，如果此列表不包含元素，则返回-1。
+        IndexOf(e E) int
+
+        // LastIndexOf 返回此列表中指定元素的最后一次出现的索引，如果此列表不包含元素，则返回-1。
+        LastIndexOf(e E) int
+
+        // ListIterator 返回列表迭代器
+        ListIterator() ListIterator[E]
+
+        // ListIteratorAt 返回列表迭代器,指定开始迭代位置
+        ListIteratorAt(index int) ListIterator[E]
+
+        // SubList 返回列表中指定的fromIndex （含）和toIndex之间的部分
+        SubList(fromIndex, toIndex int) List[E]
+
+        // RemoveN 从集合中移除指定的元素
+        // 参数 n 表示移除个数, -1表示全部移除
+        // 成功移除返回true, 不存在指定元素返回false
+        RemoveN(e E, n int) int
+
+        // RemoveIfN 将集合中的元素应用filter函数，如果函数返回true元素将被移除
+        // 参数 n 表示移除个数, -1表示全部移除
+        // 返回移除的元素个数
+        RemoveIfN(filter Predicate[E], n int) int
+}
+
+// List 底层实现结构选择
+const (
+        _ = iota
+        DataStructSlice
+        DataStructLinked
+)
+
+type ListConfig struct {
+        // InitialCapacity 初始容量，底层结构为DataStructSlice时有效，默认16
+        InitialCapacity int
+        // Safe 是否需要并发安全，需要在多个goroutine中并发操作时需要设置为true，默认false
+        Safe bool
+        // DataStruct 底层实现结构，默认为切片实现
+        DataStruct int
+        // EqualComparator 元素相等比较函数
+        // 如何元素是可比较的如：int、string等，可以不设置，默认使用 == 比较
+        // 如果元素不可比较，需要设置改字段，如果没有设置当调用需要比较元素的方法时，比较结果永远返回false
+        EqualComparator constraints.EqualComparator[any]
+}
+
+// DefaultListConfig 默认配置
+var DefaultListConfig = ListConfig{
+        InitialCapacity: 16,
+        Safe:            false,
+        DataStruct:      DataStructSlice,
+}
+
+type ListOption func(config *ListConfig)
+
+// NewList 根据配置创建一个 List
+func NewList[E any](config ListConfig, options ...ListOption) List[E] <span class="cov8" title="1">{
+        for _, option := range options </span><span class="cov8" title="1">{
+                option(&amp;config)
+        }</span>
+        <span class="cov8" title="1">if config.InitialCapacity &lt; 1 </span><span class="cov8" title="1">{
+                config.InitialCapacity = 16
+        }</span>
+        <span class="cov8" title="1">if config.EqualComparator == nil </span><span class="cov8" title="1">{
+                config.EqualComparator = DefaultEqualFunc()
+        }</span>
+        <span class="cov8" title="1">var list List[E]
+        if config.DataStruct == DataStructLinked </span><span class="cov8" title="1">{
+                list = NewLinkedList[E](AnyEqualComparableFunc[E](func(v1, v2 E) bool </span><span class="cov8" title="1">{
+                        return config.EqualComparator.Equal(v1, v2)
+                }</span>))
+        } else<span class="cov8" title="1"> {
+                list = NewArrayList[E](config.InitialCapacity, AnyEqualComparableFunc[E](func(v1, v2 E) bool </span><span class="cov8" title="1">{
+                        return config.EqualComparator.Equal(v1, v2)
+                }</span>))
+        }
+        <span class="cov8" title="1">if config.Safe </span><span class="cov8" title="1">{
+                list = NewSafeList[E](list)
+        }</span>
+        <span class="cov8" title="1">return list</span>
+}
+
+func WithEqualFunc[E any](f func(v1, v2 E) bool) ListOption <span class="cov8" title="1">{
+        return func(config *ListConfig) </span><span class="cov8" title="1">{
+                config.EqualComparator = AnyEqualComparableFunc[any](func(v1, v2 any) bool </span><span class="cov8" title="1">{
+                        return f(v1.(E), v2.(E))
+                }</span>)
+        }
+}
+
+func DefaultEqualFunc() constraints.EqualComparator[any] <span class="cov8" title="1">{
+        return AnyEqualComparableFunc[any](func(v1, v2 any) bool </span><span class="cov8" title="1">{
+                switch v1.(type) </span>{
+                case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, uint, float32, float64, string:<span class="cov8" title="1">
+                        return v1 == v2</span>
+                }
+                <span class="cov8" title="1">val := reflect.ValueOf(v1)
+                if val.Type().Comparable() </span><span class="cov8" title="1">{
+                        return v1 == v2
+                }</span>
+                <span class="cov8" title="1">return reflect.DeepEqual(v1, v2)</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "container/list"
+        "errors"
+        "math"
+)
+
+var (
+        ErrNoSuchElement = errors.New("no such element")
+        ErrIllegalState  = errors.New("illegal state")
+        ErrIteratorClose = errors.New("iterator is close")
+)
+
+type ListIterator[E any] interface {
+        Iterator[E]
+
+        // HasPrevious 如果有上一个元素，则返回true
+        HasPrevious() bool
+
+        // Previous 返回迭代中的上一个元素
+        Previous() (E, error)
+
+        // NextIndex 返回迭代中的下一个元素的索引
+        NextIndex() int
+
+        // PreviousIndex 返回迭代中的上一个元素的索引
+        PreviousIndex() int
+}
+
+func newListIterator[E any](list List[E], start int) ListIterator[E] <span class="cov8" title="1">{
+        return &amp;listIterator[E]{
+                lastRet: -1,
+                cursor:  start,
+                list:    list,
+        }
+}</span>
+
+type listIterator[E any] struct {
+        // cursor 当前指针指向位置，下一次调用 Next() 方法返回 cursor 位置的值，每次调用 Next() 方法后，cursor 的值都会加一
+        // lastRet 上一次调用 Next() 方法是的 cursor 值
+        cursor, lastRet int
+
+        isClose bool
+        list    List[E]
+}
+
+func (l *listIterator[E]) HasNext() bool <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">return l.cursor &lt; l.list.Size()</span>
+}
+
+func (l *listIterator[E]) Next() (e E, err error) <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                err = ErrIteratorClose
+                return
+        }</span>
+        <span class="cov8" title="1">i := l.cursor
+        if i &gt;= l.list.Size() </span><span class="cov8" title="1">{
+                err = ErrNoSuchElement
+                return
+        }</span>
+        <span class="cov8" title="1">e, err = l.list.Get(i)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">l.cursor = i + 1
+        l.lastRet = i
+        return</span>
+}
+
+func (l *listIterator[E]) Remove() error <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">if l.lastRet &lt; 0 </span><span class="cov8" title="1">{
+                return ErrIllegalState
+        }</span>
+        <span class="cov8" title="1">_, err := l.list.RemoveAt(l.lastRet)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">l.cursor = l.lastRet
+        l.lastRet = -1
+        return nil</span>
+}
+
+func (l *listIterator[E]) ForEachRemaining(action Consumer[E]) error <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">size := l.list.Size()
+        var err error
+        var e E
+        for i := l.cursor; i &lt; size; i++ </span><span class="cov8" title="1">{
+                e, err = l.list.Get(i)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">err = action(e)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (l *listIterator[E]) HasPrevious() bool <span class="cov8" title="1">{
+        return l.cursor != 0 &amp;&amp; l.isClose == false
+}</span>
+
+func (l *listIterator[E]) Previous() (e E, err error) <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                err = ErrIteratorClose
+                return
+        }</span>
+        <span class="cov8" title="1">i := l.lastRet
+        if i &lt; 0 </span><span class="cov8" title="1">{
+                err = ErrNoSuchElement
+                return
+        }</span>
+        <span class="cov8" title="1">e, err = l.list.Get(l.lastRet)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">l.cursor = i
+        l.lastRet = i - 1
+        return</span>
+}
+
+func (l *listIterator[E]) NextIndex() int <span class="cov8" title="1">{
+        return l.cursor
+}</span>
+
+func (l *listIterator[E]) PreviousIndex() int <span class="cov8" title="1">{
+        return l.lastRet
+}</span>
+
+func (l *listIterator[E]) Close() <span class="cov8" title="1">{
+        l.isClose = true
+        l.cursor = math.MaxInt
+        l.lastRet = -1
+}</span>
+
+func newLinkedListIterator[E any](list *linkedList[E], start int) ListIterator[E] <span class="cov8" title="1">{
+        e, _ := list.getElement(start)
+        return &amp;linkedListIterator[E]{
+                cursor:    e,
+                nextIndex: start,
+                list:      list,
+        }
+}</span>
+
+type linkedListIterator[E any] struct {
+        // cursor 当前指针指向元素，下一次调用 Next() 方法返回 cursor 的值
+        // lastRet 上一次调用 Next() 方法时的 cursor 的值
+        cursor, lastRet *list.Element
+        list            *linkedList[E]
+        nextIndex       int
+        isClose         bool
+}
+
+func (l *linkedListIterator[E]) HasNext() bool <span class="cov8" title="1">{
+        return l.cursor != nil &amp;&amp; l.isClose == false
+}</span>
+
+func (l *linkedListIterator[E]) Next() (e E, err error) <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                err = ErrIteratorClose
+                return
+        }</span>
+        <span class="cov8" title="1">cur := l.cursor
+        if cur == nil </span><span class="cov8" title="1">{
+                err = ErrNoSuchElement
+                return
+        }</span>
+        <span class="cov8" title="1">l.cursor = l.cursor.Next()
+        l.lastRet = cur
+        l.nextIndex++
+        return cur.Value.(E), nil</span>
+}
+
+func (l *linkedListIterator[E]) Remove() error <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">if l.lastRet == nil </span><span class="cov8" title="1">{
+                return ErrIllegalState
+        }</span>
+        <span class="cov8" title="1">l.list.removeElement(l.lastRet)
+        l.lastRet = nil
+        return nil</span>
+}
+
+func (l *linkedListIterator[E]) ForEachRemaining(action Consumer[E]) error <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">var err error
+        cur := l.cursor
+        for cur != nil </span><span class="cov8" title="1">{
+                err = action(cur.Value.(E))
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">cur = cur.Next()</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (l *linkedListIterator[E]) HasPrevious() bool <span class="cov8" title="1">{
+        return l.nextIndex &gt; 0 &amp;&amp; l.isClose == false
+}</span>
+
+func (l *linkedListIterator[E]) Previous() (e E, err error) <span class="cov8" title="1">{
+        if l.isClose </span><span class="cov8" title="1">{
+                err = ErrIteratorClose
+                return
+        }</span>
+        <span class="cov8" title="1">if !l.HasPrevious() </span><span class="cov8" title="1">{
+                err = ErrNoSuchElement
+                return
+        }</span>
+        <span class="cov8" title="1">element := l.lastRet
+        l.cursor = l.lastRet
+        l.lastRet = l.cursor.Prev()
+        l.nextIndex--
+        return element.Value.(E), nil</span>
+}
+
+func (l *linkedListIterator[E]) NextIndex() int <span class="cov8" title="1">{
+        return l.nextIndex
+}</span>
+
+func (l *linkedListIterator[E]) PreviousIndex() int <span class="cov8" title="1">{
+        return l.nextIndex - 1
+}</span>
+
+func (l *linkedListIterator[E]) Close() <span class="cov8" title="1">{
+        l.isClose = true
+        l.cursor = nil
+        l.lastRet = nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "fmt"
+        "sync"
+)
+
+type safeList[E any] struct {
+        List[E]
+        *sync.RWMutex
+}
+
+func NewSafeList[E any](list List[E]) List[E] <span class="cov8" title="1">{
+        return &amp;safeList[E]{
+                List:    list,
+                RWMutex: &amp;sync.RWMutex{},
+        }
+}</span>
+
+func (a *safeList[E]) Size() int <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.Size()
+}</span>
+
+func (a *safeList[E]) IsEmpty() bool <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.IsEmpty()
+}</span>
+
+func (a *safeList[E]) Contains(e E) bool <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.Contains(e)
+}</span>
+
+func (a *safeList[E]) Iterator() Iterator[E] <span class="cov8" title="1">{
+        return a.ListIterator()
+}</span>
+
+func (a *safeList[E]) ToArray() []E <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.ToArray()
+}</span>
+
+func (a *safeList[E]) Add(e E) bool <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.Add(e)
+}</span>
+
+func (a *safeList[E]) Remove(e E) bool <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.Remove(e)
+}</span>
+
+func (a *safeList[E]) RemoveN(e E, n int) int <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RemoveN(e, n)
+}</span>
+
+func (a *safeList[E]) ContainsAll(c Collection[E]) bool <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.ContainsAll(c)
+}</span>
+
+func (a *safeList[E]) AddAll(c Collection[E]) <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        a.List.AddAll(c)
+}</span>
+
+func (a *safeList[E]) RemoveAll(c Collection[E]) int <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RemoveAll(c)
+}</span>
+
+func (a *safeList[E]) RemoveIf(filter Predicate[E]) int <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RemoveIf(filter)
+}</span>
+
+func (a *safeList[E]) RemoveIfN(filter Predicate[E], n int) int <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RemoveIfN(filter, n)
+}</span>
+
+func (a *safeList[E]) RetainAll(c Collection[E]) int <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RetainAll(c)
+}</span>
+
+func (a *safeList[E]) Clear() <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        a.List.Clear()
+}</span>
+
+func (a *safeList[E]) Equals(c Collection[E]) bool <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.Equals(c)
+}</span>
+
+func (a *safeList[E]) ForEach(f Consumer[E]) error <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.ForEach(f)
+}</span>
+
+func (a *safeList[E]) ReplaceAll(operator UnaryOperator[E]) <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        a.List.ReplaceAll(operator)
+}</span>
+
+func (a *safeList[E]) Sort(less SortLess[E]) <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        a.List.Sort(less)
+}</span>
+
+func (a *safeList[E]) Get(index int) (E, error) <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.Get(index)
+}</span>
+
+func (a *safeList[E]) Set(index int, e E) (E, error) <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.Set(index, e)
+}</span>
+
+func (a *safeList[E]) AddAt(index int, e E) error <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.AddAt(index, e)
+}</span>
+
+func (a *safeList[E]) RemoveAt(index int) (E, error) <span class="cov8" title="1">{
+        a.Lock()
+        defer a.Unlock()
+        return a.List.RemoveAt(index)
+}</span>
+
+func (a *safeList[E]) IndexOf(e E) int <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.IndexOf(e)
+}</span>
+
+func (a *safeList[E]) LastIndexOf(e E) int <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.LastIndexOf(e)
+}</span>
+
+func (a *safeList[E]) ListIterator() ListIterator[E] <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return newSafeListIterator(a.List.ListIterator(), a.RWMutex)
+}</span>
+
+func (a *safeList[E]) ListIteratorAt(index int) ListIterator[E] <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return newSafeListIterator(a.List.ListIteratorAt(index), a.RWMutex)
+}</span>
+
+func (a *safeList[E]) SubList(fromIndex, toIndex int) List[E] <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return a.List.SubList(fromIndex, toIndex)
+}</span>
+
+func (a *safeList[E]) String() string <span class="cov8" title="1">{
+        a.RLock()
+        defer a.RUnlock()
+        return fmt.Sprintf("%+v", a.List)
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import (
+        "sync"
+)
+
+// newSafeListIterator 创建安全的迭代器
+// 一旦调用了迭代器的 Remove 方法来修改 List 集合，m 锁将会升级为写锁
+// 安全的迭代器使用完之后必须主动调用 Close 进行关闭，释放锁。
+func newSafeListIterator[E any](list ListIterator[E], m *sync.RWMutex) ListIterator[E] <span class="cov8" title="1">{
+        m.RLock()
+        return &amp;safeListIterator[E]{
+                ListIterator: list,
+                m:            m,
+                RWMutex:      &amp;sync.RWMutex{},
+        }
+}</span>
+
+type safeListIterator[E any] struct {
+        ListIterator[E]
+        *sync.RWMutex
+        m       *sync.RWMutex
+        mup     bool
+        isClose bool
+}
+
+func (l *safeListIterator[E]) HasNext() bool <span class="cov8" title="1">{
+        l.RWMutex.RLock()
+        defer l.RWMutex.RUnlock()
+        return l.ListIterator.HasNext()
+}</span>
+
+func (l *safeListIterator[E]) Next() (e E, err error) <span class="cov8" title="1">{
+        // 获取下一个元素会更新内部指针，所有需要写锁
+        l.RWMutex.Lock()
+        defer l.RWMutex.Unlock()
+        return l.ListIterator.Next()
+}</span>
+
+func (l *safeListIterator[E]) Remove() error <span class="cov8" title="1">{
+        l.RWMutex.Lock()
+        defer l.RWMutex.Unlock()
+        if l.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        // 第一次调用，升级锁
+        <span class="cov8" title="1">if !l.mup </span><span class="cov8" title="1">{
+                l.m.RUnlock()
+                l.m.Lock()
+                l.mup = true
+        }</span>
+        <span class="cov8" title="1">return l.ListIterator.Remove()</span>
+}
+
+func (l *safeListIterator[E]) ForEachRemaining(action Consumer[E]) error <span class="cov8" title="1">{
+        l.RWMutex.RLock()
+        defer l.RWMutex.RUnlock()
+        return l.ListIterator.ForEachRemaining(action)
+}</span>
+
+func (l *safeListIterator[E]) HasPrevious() bool <span class="cov8" title="1">{
+        l.RWMutex.RLock()
+        defer l.RWMutex.RUnlock()
+        return l.ListIterator.HasPrevious()
+}</span>
+
+func (l *safeListIterator[E]) Previous() (e E, err error) <span class="cov8" title="1">{
+        l.RWMutex.Lock()
+        defer l.RWMutex.Unlock()
+        return l.ListIterator.Previous()
+}</span>
+
+func (l *safeListIterator[E]) NextIndex() int <span class="cov8" title="1">{
+        l.RWMutex.RLock()
+        defer l.RWMutex.RUnlock()
+        return l.ListIterator.NextIndex()
+}</span>
+
+func (l *safeListIterator[E]) PreviousIndex() int <span class="cov8" title="1">{
+        l.RWMutex.RLock()
+        defer l.RWMutex.RUnlock()
+        return l.ListIterator.PreviousIndex()
+}</span>
+
+func (l *safeListIterator[E]) Close() <span class="cov8" title="1">{
+        l.RWMutex.Lock()
+        defer l.RWMutex.Unlock()
+        l.ListIterator.Close()
+        if l.mup </span><span class="cov8" title="1">{
+                l.m.Unlock()
+        }</span> else<span class="cov8" title="1"> {
+                l.m.RUnlock()
+        }</span>
+        <span class="cov8" title="1">l.isClose = true</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+// Set 不包含重复元素的集合
+type Set[E comparable] interface {
+        Collection[E]
+}
+
+func NewSet[E comparable]() Set[E] <span class="cov8" title="1">{
+        return &amp;hashSet[E]{
+                data: make(map[E]struct{}),
+        }
+}</span>
+
+func SetOf[E comparable](list ...E) Set[E] <span class="cov8" title="1">{
+        set := NewSet[E]()
+        for _, v := range list </span><span class="cov8" title="1">{
+                set.Add(v)
+        }</span>
+        <span class="cov8" title="1">return set</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">/*
+ *
+ * Copyright 2022 go-util authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package collect
+
+import "math"
+
+func NewSetIterator[E comparable](set Set[E]) Iterator[E] <span class="cov8" title="1">{
+        return &amp;setIterator[E]{
+                lastRet: -1,
+                size:    set.Size(),
+                values:  set.ToArray(),
+                set:     set,
+        }
+}</span>
+
+type setIterator[E comparable] struct {
+        cursor, lastRet, size int
+
+        isClose bool
+        set     Set[E]
+        values  []E
+}
+
+func (s *setIterator[E]) HasNext() bool <span class="cov8" title="1">{
+        return s.cursor &lt; s.size &amp;&amp; s.isClose == false
+}</span>
+
+func (s *setIterator[E]) Next() (e E, err error) <span class="cov8" title="1">{
+        if s.isClose </span><span class="cov8" title="1">{
+                err = ErrIteratorClose
+                return
+        }</span>
+        <span class="cov8" title="1">i := s.cursor
+        if i &gt;= s.size </span><span class="cov8" title="1">{
+                err = ErrNoSuchElement
+                return
+        }</span>
+        <span class="cov8" title="1">s.cursor = i + 1
+        s.lastRet = i
+        return s.values[i], nil</span>
+}
+
+func (s *setIterator[E]) Remove() error <span class="cov8" title="1">{
+        if s.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">if s.lastRet &lt; 0 </span><span class="cov8" title="1">{
+                return ErrIllegalState
+        }</span>
+        <span class="cov8" title="1">s.set.Remove(s.values[s.lastRet])
+        s.lastRet = -1
+        return nil</span>
+}
+
+func (s *setIterator[E]) ForEachRemaining(action Consumer[E]) error <span class="cov8" title="1">{
+        if s.isClose </span><span class="cov8" title="1">{
+                return ErrIteratorClose
+        }</span>
+        <span class="cov8" title="1">var err error
+        for i := s.cursor; i &lt; s.size; i++ </span><span class="cov8" title="1">{
+                err = action(s.values[i])
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *setIterator[E]) Close() <span class="cov8" title="1">{
+        s.isClose = true
+        s.cursor = math.MaxInt
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

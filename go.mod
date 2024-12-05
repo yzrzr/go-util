@@ -1,3 +1,3 @@
 module github.com/yzrzr/go-util
 
-go 1.18
+go 1.23

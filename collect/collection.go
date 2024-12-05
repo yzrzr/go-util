@@ -18,8 +18,10 @@
 
 package collect
 
+import "github.com/yzrzr/go-util/constraints"
+
 // Collection 集合的根接口
-type Collection[E comparable] interface {
+type Collection[E any] interface {
 	// Size 返回此集合中的元素数
 	Size() int
 
@@ -69,4 +71,13 @@ type Collection[E comparable] interface {
 
 	// ForEach 迭代集合中的元素，直到所有元素都被处理或返回错误
 	ForEach(f Consumer[E]) error
+
+	// GetEqualComparator 返回元素比较器
+	GetEqualComparator() constraints.EqualComparator[E]
+}
+
+type AnyEqualComparableFunc[E any] func(v1, v2 E) bool
+
+func (f AnyEqualComparableFunc[E]) Equal(v1, v2 E) bool {
+	return f(v1, v2)
 }

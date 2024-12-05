@@ -20,27 +20,27 @@ package collect
 
 import (
 	"fmt"
-	"math"
-	"reflect"
+	"github.com/yzrzr/go-util/constraints"
 	"sort"
 	"strings"
-	"unsafe"
 )
 
 // NewArrayList Abstract Factory
-func NewArrayList[E comparable](initialCapacity int) List[E] {
+func NewArrayList[E any](initialCapacity int, comparator constraints.EqualComparator[E]) List[E] {
 	return &arrayList[E]{
 		elementData: make([]E, initialCapacity),
 		capacity:    initialCapacity,
 		size:        0,
+		comparator:  comparator,
 	}
 }
 
-type arrayList[E comparable] struct {
+type arrayList[E any] struct {
 	elementData []E
 	size        int
 	capacity    int
 	zeroVal     E
+	comparator  constraints.EqualComparator[E]
 }
 
 func (a *arrayList[E]) Size() int {
@@ -70,27 +70,20 @@ func (a *arrayList[E]) ToArray() []E {
 
 func (a *arrayList[E]) Add(e E) bool {
 	a.grow(a.size + 1)
-	if a.capacity > a.size {
-		a.elementData[a.size] = e
-	} else {
-		a.elementData = append(a.elementData, e)
-		a.capacity = cap(a.elementData)
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&a.elementData))
-		h.Len = a.capacity
-	}
+	a.elementData[a.size] = e
 	a.size++
 	return true
 }
 
 func (a *arrayList[E]) Remove(e E) bool {
 	return a.RemoveIfN(func(o E) bool {
-		return o == e
+		return a.comparator.Equal(e, o)
 	}, 1) == 1
 }
 
 func (a *arrayList[E]) RemoveN(e E, n int) int {
 	return a.RemoveIfN(func(o E) bool {
-		return o == e
+		return a.comparator.Equal(e, o)
 	}, n)
 }
 
@@ -208,12 +201,9 @@ func (a *arrayList[E]) ReplaceAll(operator UnaryOperator[E]) {
 }
 
 func (a *arrayList[E]) Sort(less SortLess[E]) {
-	s := sortList[E]{
-		data: a.elementData[:a.size],
-		less: less,
-	}
-	sort.Sort(s)
-	a.elementData = s.data
+	sort.Slice(a.elementData[:a.size], func(i, j int) bool {
+		return less(a.elementData[i], a.elementData[j])
+	})
 }
 
 func (a *arrayList[E]) Get(index int) (E, error) {
@@ -255,7 +245,7 @@ func (a *arrayList[E]) RemoveAt(index int) (E, error) {
 
 func (a *arrayList[E]) IndexOf(e E) int {
 	for i := 0; i < a.size; i++ {
-		if a.elementData[i] == e {
+		if a.comparator.Equal(e, a.elementData[i]) {
 			return i
 		}
 	}
@@ -264,7 +254,7 @@ func (a *arrayList[E]) IndexOf(e E) int {
 
 func (a *arrayList[E]) LastIndexOf(e E) int {
 	for i := a.size - 1; i >= 0; i-- {
-		if a.elementData[i] == e {
+		if a.comparator.Equal(e, a.elementData[i]) {
 			return i
 		}
 	}
@@ -286,6 +276,7 @@ func (a *arrayList[E]) SubList(fromIndex, toIndex int) List[E] {
 		elementData: data,
 		capacity:    cap(data),
 		size:        len(data),
+		comparator:  a.comparator,
 	}
 }
 
@@ -293,11 +284,8 @@ func (a *arrayList[E]) grow(minCapacity int) {
 	if a.capacity >= minCapacity {
 		return
 	}
-	if minCapacity > math.MaxInt || minCapacity < 0 {
-		panic("grow array list: cap out of range")
-	}
 	newCapacity := a.capacity
-	doubleCapacity := a.capacity >> 1
+	doubleCapacity := a.capacity << 1
 	if minCapacity > doubleCapacity {
 		newCapacity = minCapacity
 	} else {
@@ -336,6 +324,10 @@ func (a *arrayList[E]) String() string {
 	}
 	build.WriteByte(']')
 	return build.String()
+}
+
+func (a *arrayList[E]) GetEqualComparator() constraints.EqualComparator[E] {
+	return a.comparator
 }
 
 //---- sort.Interface -----

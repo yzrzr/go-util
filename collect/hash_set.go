@@ -20,6 +20,7 @@ package collect
 
 import (
 	"fmt"
+	"github.com/yzrzr/go-util/constraints"
 	"strings"
 )
 
@@ -79,7 +80,7 @@ func (h *hashSet[E]) ContainsAll(c Collection[E]) bool {
 }
 
 func (h *hashSet[E]) AddAll(c Collection[E]) {
-	c.ForEach(func(e E) error {
+	_ = c.ForEach(func(e E) error {
 		h.data[e] = struct{}{}
 		return nil
 	})
@@ -132,12 +133,21 @@ func (h *hashSet[E]) ForEach(f Consumer[E]) error {
 	return nil
 }
 
+func (h *hashSet[E]) GetEqualComparator() constraints.EqualComparator[E] {
+	return nil
+}
+
 func (h *hashSet[E]) String() string {
 	build := strings.Builder{}
 	build.WriteByte('[')
+	l := h.Size()
+	i := 0
 	for v := range h.data {
 		build.WriteString(fmt.Sprintf("%v", v))
-		build.WriteByte(' ')
+		if i < l-1 {
+			build.WriteByte(' ')
+		}
+		i++
 	}
 	build.WriteByte(']')
 	return build.String()

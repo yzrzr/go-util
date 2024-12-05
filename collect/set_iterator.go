@@ -25,6 +25,7 @@ func NewSetIterator[E comparable](set Set[E]) Iterator[E] {
 		lastRet: -1,
 		size:    set.Size(),
 		values:  set.ToArray(),
+		set:     set,
 	}
 }
 
@@ -37,7 +38,7 @@ type setIterator[E comparable] struct {
 }
 
 func (s *setIterator[E]) HasNext() bool {
-	return s.cursor < s.size
+	return s.cursor < s.size && s.isClose == false
 }
 
 func (s *setIterator[E]) Next() (e E, err error) {
@@ -46,7 +47,7 @@ func (s *setIterator[E]) Next() (e E, err error) {
 		return
 	}
 	i := s.cursor
-	if i > s.size {
+	if i >= s.size {
 		err = ErrNoSuchElement
 		return
 	}

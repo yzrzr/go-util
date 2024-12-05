@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewPool(t *testing.T) {
-	p := NewPool[int](func() int {
+	p := NewPool(func() int {
 		return 10
 	})
 	if p.Get() != 10 {

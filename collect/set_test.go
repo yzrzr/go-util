@@ -1,8 +1,13 @@
 package collect
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
+	"slices"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -28,6 +33,9 @@ func TestSetOf(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SetOf(tt.args...); !got.Equals(tt.want) {
 				t.Errorf("SetOf() = %v, want %v", got, tt.want)
+			}
+			if got := SetOf(tt.args...); !got.Equals(got) {
+				t.Errorf("SetOf() = %v, want %v", got, got)
 			}
 		})
 	}
@@ -156,6 +164,7 @@ func Test_hashSet_ForEach(t *testing.T) {
 		wantTotal int
 	}{
 		{"ForEach-1", SetOf[int](1, 2, 3, 4, 4), func(e int) error { total += e; return nil }, false, 10},
+		{"ForEach-2", SetOf[int](1, 2, 3, 4, 4), func(e int) error { return errors.New("x") }, true, 10},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -304,6 +313,30 @@ func Test_hashSet_ToArray(t *testing.T) {
 			got := tt.set.ToArray()
 			sort.Ints(got)
 			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToArray() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hashSet_String(t *testing.T) {
+	tests := []struct {
+		name string
+		set  Set[int]
+		want []int
+	}{
+		{"String-1", SetOf[int](1, 2, 3, 4, 5, 6, 7, 8), []int{1, 2, 3, 4, 5, 6, 7, 8}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := fmt.Sprintf("%v", tt.set)
+			var arr []int
+			for _, v := range strings.Split(strings.Trim(got, "[]"), " ") {
+				v1, _ := strconv.Atoi(v)
+				arr = append(arr, v1)
+			}
+			slices.Sort(arr)
+			if !reflect.DeepEqual(arr, tt.want) {
 				t.Errorf("ToArray() = %v, want %v", got, tt.want)
 			}
 		})

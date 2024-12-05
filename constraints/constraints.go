@@ -36,3 +36,7 @@ type Comparable[E any] interface {
 	//}
 	Compare(E) int
 }
+
+type EqualComparator[E any] interface {
+	Equal(v1, v2 E) bool
+}

@@ -21,19 +21,22 @@ package collect
 import (
 	"container/list"
 	"fmt"
+	"github.com/yzrzr/go-util/constraints"
 	"sort"
 	"strings"
 )
 
-func NewLinkedList[E comparable]() List[E] {
+func NewLinkedList[E any](comparator constraints.EqualComparator[E]) List[E] {
 	return &linkedList[E]{
-		list: list.New(),
+		list:       list.New(),
+		comparator: comparator,
 	}
 }
 
-type linkedList[E comparable] struct {
-	list    *list.List
-	zeroVal E
+type linkedList[E any] struct {
+	list       *list.List
+	zeroVal    E
+	comparator constraints.EqualComparator[E]
 }
 
 func (l *linkedList[E]) Size() int {
@@ -71,13 +74,13 @@ func (l *linkedList[E]) Add(e E) bool {
 
 func (l *linkedList[E]) Remove(e E) bool {
 	return l.RemoveIfN(func(o E) bool {
-		return o == e
+		return l.comparator.Equal(e, o)
 	}, 1) == 1
 }
 
 func (l *linkedList[E]) RemoveN(e E, n int) int {
 	return l.RemoveIfN(func(o E) bool {
-		return o == e
+		return l.comparator.Equal(e, o)
 	}, n)
 }
 
@@ -155,6 +158,9 @@ func (l *linkedList[E]) ForEach(f Consumer[E]) error {
 }
 
 func (l *linkedList[E]) ReplaceAll(operator UnaryOperator[E]) {
+	if operator == nil {
+		return
+	}
 	for cur := l.list.Front(); cur != nil; cur = cur.Next() {
 		cur.Value = operator(cur.Value.(E))
 	}
@@ -219,7 +225,7 @@ func (l *linkedList[E]) RemoveAt(index int) (E, error) {
 
 func (l *linkedList[E]) IndexOf(e E) int {
 	for element, index := l.list.Front(), 0; element != nil; element, index = element.Next(), index+1 {
-		if element.Value == e {
+		if l.comparator.Equal(e, element.Value.(E)) {
 			return index
 		}
 	}
@@ -228,7 +234,7 @@ func (l *linkedList[E]) IndexOf(e E) int {
 
 func (l *linkedList[E]) LastIndexOf(e E) int {
 	for element, index := l.list.Back(), l.Size()-1; element != nil; element, index = element.Prev(), index-1 {
-		if element.Value == e {
+		if l.comparator.Equal(e, element.Value.(E)) {
 			return index
 		}
 	}
@@ -244,13 +250,17 @@ func (l *linkedList[E]) ListIteratorAt(index int) ListIterator[E] {
 }
 
 func (l *linkedList[E]) SubList(fromIndex, toIndex int) List[E] {
-	newLinkedList := NewLinkedList[E]()
+	newLinkedList := NewLinkedList[E](l.comparator)
 	itr := l.ListIteratorAt(fromIndex)
 	for itr.NextIndex() < toIndex && itr.HasNext() {
 		e, _ := itr.Next()
 		newLinkedList.Add(e)
 	}
 	return newLinkedList
+}
+
+func (l *linkedList[E]) GetEqualComparator() constraints.EqualComparator[E] {
+	return l.comparator
 }
 
 func (l *linkedList[E]) String() string {
